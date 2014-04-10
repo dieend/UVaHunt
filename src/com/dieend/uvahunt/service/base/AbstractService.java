@@ -1,6 +1,7 @@
 package com.dieend.uvahunt.service.base;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 import android.app.Service;
 import android.content.Intent;
@@ -70,11 +71,13 @@ public abstract class AbstractService extends Service {
         
         Log.i("MyService", "Service Stopped.");
     }    
-    
+    static String MsgString(Message msg) {
+    	return String.format(Locale.getDefault(), "{what=%d,obj=%s}", msg.what, msg);
+    }
     protected void send(Message msg) {
    	 for (int i=mClients.size()-1; i>=0; i--) {
             try {
-            	Log.i("MyService", "Sending message to clients: "+msg);
+            	Log.i("MyService", "Sending message to clients: "+ MsgString(msg));
                mClients.get(i).send(msg);
             }
             catch (RemoteException e) {

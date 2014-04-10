@@ -1,10 +1,12 @@
 package com.dieend.uvahunt.model;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 public class Problem {
 	int id;
@@ -23,6 +25,22 @@ public class Problem {
 	int numOfAccepted;
 	boolean solved;
 
+	Problem(int id,
+		int number,
+		String title,
+		int dacu,
+		int bestRuntime,
+		int bestMemory,
+		int numOfRuntimeError,
+		int numOfOutputLimitError,
+		int numOfTimeLimitError,
+		int numOfMemoryLimitError,
+		int numOfWrongAnswer,
+		int numOfPresentationError,
+		int numOfAccepted,
+		int runtimeLimit,
+		boolean solved) {
+	}
 	public int getId() {
 		return id;
 	}
@@ -71,10 +89,15 @@ public class Problem {
 	public static boolean isSolved(int pid) {
 		return solveds.contains(pid);
 	}
-	private static Set<Integer> solveds = new HashSet<Integer>(); 
+	private static Set<Integer> solveds = new HashSet<Integer>();
+	public static Set<Integer> solvedProblems() {
+		return Collections.unmodifiableSet(solveds);
+	}
 	public static void populateSolvedProblem(String json) {
 		try {
 			JSONArray array = new JSONArray(json);
+			JSONObject obj = array.getJSONObject(0);
+			array = obj.getJSONArray("solved");
 			for (int j=0; j<array.length(); j++) {
 				int a = array.getInt(j);
 				for (int i = 0; i<32; i++) {

@@ -1,17 +1,24 @@
 package com.dieend.uvahunt.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.SparseArray;
+import android.util.SparseIntArray;
 
 import com.dieend.uvahunt.UvaHuntActivity;
 
 public class DBManager {
 	private static class DBHelper  extends SQLiteOpenHelper {
+		private static final int DATABASE_VERSION = 2;
 		public static final String DB_NAME = UvaHuntActivity.TAG + ".DATABASE";
 		
 		public static final String PROBLEM_TABLE = "problem";
@@ -45,7 +52,6 @@ public class DBManager {
 			PROBLEM_COLUMN_PRESENTATION_ERROR,
 			PROBLEM_COLUMN_ACCEPTED,
 			PROBLEM_COLUMN_IS_SOLVED};
-		private static final int DATABASE_VERSION = 1;
 	
 		private static final String CREATE_TABLE_PROBLEM = "create table "
 			      + PROBLEM_TABLE + "(" + 
@@ -62,7 +68,7 @@ public class DBManager {
 				PROBLEM_COLUMN_MEMORY_LIMIT + " INTEGER, " +
 				PROBLEM_COLUMN_WRONG_ANSWER + " INTEGER, " +
 				PROBLEM_COLUMN_PRESENTATION_ERROR + " INTEGER, " +
-				PROBLEM_COLUMN_ACCEPTED + " INTEGER" +
+				PROBLEM_COLUMN_ACCEPTED + " INTEGER, " +
 				PROBLEM_COLUMN_IS_SOLVED + " INTEGER);";
 		
 		public DBHelper(Context context) {
@@ -79,7 +85,7 @@ public class DBManager {
 		    onCreate(db);
 		}
 	}
-	public static DBManager instance = null;
+	private static DBManager instance = null;
 	private DBManager(Context context){
 		dbHelper = new DBHelper(context);
 		db = dbHelper.getWritableDatabase();
@@ -89,7 +95,7 @@ public class DBManager {
 	private SQLiteDatabase db;
 	private static boolean ready = false;
 	public static DBManager $() {
-		if (instance == null) {
+		if ((instance == null) || !ready) {
 			throw new RuntimeException("must prepared first");
 		}
 		return instance;
@@ -105,7 +111,7 @@ public class DBManager {
 		}
 		ready = true;
 	}
-	private void createProblem(int id, int number, String title, int dacu, int bestRuntime, 
+	private Problem createProblem(int id, int number, String title, int dacu, int bestRuntime, 
 								int bestMemory, int nRE, int nOLE, int nTLE, int nMLE, 
 								int nWA, int nPE, int nAC, int timeLimit){
 		ContentValues values = new ContentValues();
@@ -123,15 +129,34 @@ public class DBManager {
 	    values.put(DBHelper.PROBLEM_COLUMN_PRESENTATION_ERROR, nPE);
 	    values.put(DBHelper.PROBLEM_COLUMN_ACCEPTED, nAC);
 	    values.put(DBHelper.PROBLEM_COLUMN_RUNTIME_LIMIT, timeLimit);
-	    values.put(DBHelper.PROBLEM_COLUMN_IS_SOLVED, false);
+	    values.put(DBHelper.PROBLEM_COLUMN_IS_SOLVED, Problem.isSolved(id));
 	    db.insertWithOnConflict(DBHelper.PROBLEM_TABLE, null,values, SQLiteDatabase.CONFLICT_REPLACE);
+	    return new Problem(
+	    		id,
+	    	    number,
+	    	    title,
+	    	    dacu,
+	    	    bestRuntime,
+	    	    bestMemory,
+	    	    nRE,
+	    	    nOLE,
+	    	    nTLE,
+	    	    nMLE,
+	    	    nWA,
+	    	    nPE,
+	    	    nAC,
+	    	    timeLimit,
+	    	    Problem.isSolved(id));
 	}
 	public void populateProblem(String json) {
+		problemsById = new SparseArray<Problem>();
+		problemsNumToId = new SparseIntArray();
+		db.beginTransaction();
 		try {
-			JSONArray problems = new JSONArray(json);
-			for (int i=0; i<problems.length(); i++) {
-				JSONArray data = problems.getJSONArray(i);
-				createProblem(data.getInt(0), data.getInt(1), 
+			JSONArray jsonProblems = new JSONArray(json);
+			for (int i=0; i<jsonProblems.length(); i++) {
+				JSONArray data = jsonProblems.getJSONArray(i);
+				problemsById.put(data.getInt(0),(createProblem(data.getInt(0), data.getInt(1), 
 						data.getString(2), 
 						data.getInt(3), 
 						data.getInt(4), 
@@ -143,10 +168,51 @@ public class DBManager {
 						data.getInt(16), 
 						data.getInt(17), 
 						data.getInt(18), 
-						data.getInt(19));
+						data.getInt(19))));
+				problemsNumToId.put(data.getInt(1), data.getInt(0));
 			}
+			db.setTransactionSuccessful();
 		} catch (JSONException e) {
 			e.printStackTrace();
+		} finally {
+			db.endTransaction();
 		}
+	}
+	private SparseArray<Problem> problemsById = null;
+	private SparseIntArray problemsNumToId = null;
+	public void queryAllProblem() {
+		Cursor cursor = db.query(DBHelper.PROBLEM_TABLE, DBHelper.PROBLEM_COLUMNS, null, null, null, null, null);
+		cursor.moveToFirst();
+		List<Problem> ret = new ArrayList<Problem>();
+		while (!cursor.isAfterLast()) {
+			ret.add(cursorToProblem(cursor));
+			cursor.moveToNext();
+		}
+	}
+	public Problem getProblemsById(int id) {
+		if (problemsById == null) throw new RuntimeException("problems not initiated");
+		return problemsById.get(id);
+	}
+	public Problem getProblemsByNum(int num) {
+		if (problemsById == null) throw new RuntimeException("problems not initiated");
+		return problemsById.get(problemsNumToId.get(num));
+	}
+	private Problem cursorToProblem(Cursor cursor) {
+		Problem ret = new Problem(cursor.getInt(0), 
+				cursor.getInt(1), 
+				cursor.getString(2), 
+				cursor.getInt(3), 
+				cursor.getInt(4), 
+				cursor.getInt(5), 
+				cursor.getInt(6), 
+				cursor.getInt(7), 
+				cursor.getInt(8), 
+				cursor.getInt(9), 
+				cursor.getInt(10), 
+				cursor.getInt(11), 
+				cursor.getInt(12), 
+				cursor.getInt(13), 
+				cursor.getInt(14)>0);
+		return ret;
 	}
 }

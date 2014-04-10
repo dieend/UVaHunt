@@ -49,7 +49,14 @@ public class StartActivity extends Activity{
     }
 	private void finishLogin() {
 		String username = preference.getString("username", null);
-		String id = preference.getString("uid", null);
+		String id = preference.getString("uid",null);
+		if (username == null) {
+			throw new RuntimeException("somehow no username");
+		}
+		if (id == null) {
+			login(username);
+			return;
+		}
 		Intent intent = new Intent(StartActivity.this, UvaHuntActivity.class);
     	intent.putExtra("username", username);
     	intent.putExtra("uid", id);
@@ -78,7 +85,7 @@ public class StartActivity extends Activity{
 		            result = Utility.convertStreamToString(instream);
 		            instream.close();
 		        }
-		        return result;
+		        return result.trim();
 		    } catch (Exception e1) {
 		    	return null;
 		    }

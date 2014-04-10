@@ -29,7 +29,7 @@ public class ServiceManager {
         @Override
         public void handleMessage(Message msg) {
         	if (manager.mIncomingHandler != null) {
-        		Log.i("ServiceHandler", "Incoming message. Passing to handler: "+msg);
+        		Log.i("ServiceHandler", "Incoming message. Passing to handler: "+ AbstractService.MsgString(msg));
         		manager.mIncomingHandler.handleMessage(msg);
         	}
         }

@@ -2,6 +2,10 @@ package com.dieend.uvahunt;
 
 import java.util.Locale;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.app.SearchManager;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -29,6 +33,8 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.dieend.uvahunt.model.DBManager;
+import com.dieend.uvahunt.model.Submission;
+import com.dieend.uvahunt.model.User;
 import com.dieend.uvahunt.service.UhuntService;
 import com.dieend.uvahunt.service.base.ServiceManager;
 
@@ -47,55 +53,54 @@ public class UvaHuntActivity extends ActionBarActivity {
     public static final String PREFERENCES_FILE= TAG + ".PREFERENCES";
 
     private ServiceManager uhuntService;
-    private MessageHandler handler;
+    private User user;
+    private boolean ready;
+    private boolean problemReady = false;
+	private boolean profileReady = false;
     private static class MessageHandler extends Handler {
-    	String uid;
-    	ServiceManager service;
     	UvaHuntActivity callee;
-    	public MessageHandler(UvaHuntActivity main, String uid, ServiceManager service) {
-    		this.uid = uid;
-    		this.service = service;
+    	private String userdata;
+    	public MessageHandler(UvaHuntActivity main) {
     		callee = main;
     	}
-    	private String problemDetail;
-    	private boolean problemReady = false;
-    	private boolean profileReady = false;
+    	
 		@Override
 		public void handleMessage(Message msg) {
 			try {
 				switch (msg.what) {
 				case UhuntService.MSG_PROFILE_READY:
-					profileReady = true;
-					callee.ready();
+					callee.profileReady = true;
+					userdata = (String)msg.obj;
+					populateProblem();
 					break;
 				case UhuntService.MSG_DETAIL_PROBLEM_READY:
-					problemDetail = (String) msg.obj;
-					problemReady = true;
-	//				send(Message.obtain(null, ))
+					callee.problemReady = true;
+					populateProblem();
 					break;
 				case UhuntService.MSG_READY:
-					service.send(Message.obtain(null, UhuntService.MSG_REQUEST_PROFILE, uid)); 
+					callee.uhuntService.send(Message.obtain(null, UhuntService.MSG_REQUEST_PROFILE, callee.uid)); 
 					break;
-				}
-				if (problemReady && profileReady) {
-					DBManager.$().populateProblem(problemDetail);
-					problemDetail = null;
 				}
 			} catch (RemoteException ex) {
 				ex.printStackTrace();
 			}
 			super.handleMessage(msg);
 		}
-    	
+    	private void populateProblem() throws RemoteException{
+    		if (callee.problemReady && callee.profileReady) {
+    			callee.ready(userdata);
+    			callee.uhuntService.send(Message.obtain(null, UhuntService.MSG_REQUEST_POPULATE_PROBLEM_DB));
+			}
+    	}
     };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        uid = savedInstanceState.getString("uid");
-        handler = new MessageHandler(this, uid, uhuntService);
-        uhuntService = new ServiceManager(this, UhuntService.class, handler);
+        DBManager.prepare(this);
         Intent intent = getIntent();
+        uid = intent.getStringExtra("uid");
         Log.d(TAG, "username = " + intent.getStringExtra("username"));
+        Log.d(TAG, "uid = " + intent.getStringExtra("uid"));
     	setContentView(R.layout.activity_main);
         mMenuTitles = getResources().getStringArray(R.array.drawer_items);
         mTitle = getTitle();
@@ -135,8 +140,18 @@ public class UvaHuntActivity extends ActionBarActivity {
             }
         };
         mDrawerLayout.setDrawerListener(mDrawerToggle);
+        uhuntService = new ServiceManager(this, UhuntService.class, new MessageHandler(this));
+        uhuntService.start();
     }
-
+    @Override
+    public void onDestroy() {
+    	super.onDestroy();
+    	try {
+    		uhuntService.unbind();
+    	} catch (Throwable t) {
+    		t.printStackTrace();
+    	}
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -187,11 +202,16 @@ public class UvaHuntActivity extends ActionBarActivity {
     }
 
     private void selectItem(int position) {
+    	if (!ready) return;
         // update the main content by replacing fragments
-        Fragment fragment = new ProfileFragment();
-        Bundle args = new Bundle();
-//        args.putInt(ProfileFragment, position);
-        fragment.setArguments(args);
+    	Fragment fragment = null;
+    	switch (position) {
+    	case 0:
+    		fragment = new ProfileFragment();
+	        Bundle args = new Bundle();
+	        args.putSerializable("user", user);
+	        fragment.setArguments(args);
+    	}
 
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
@@ -201,8 +221,16 @@ public class UvaHuntActivity extends ActionBarActivity {
         setTitle(mMenuTitles[position]);
         mDrawerLayout.closeDrawer(mDrawerList);
     }
-    private void ready() {
-    	
+    private void ready(String json) {
+    	ready = true;
+		try {
+			Log.d(TAG, json);
+			user = new User(json);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+    	findViewById(android.R.id.progress).setVisibility(View.GONE);
+    	selectItem(0);
     }
 
     @Override
