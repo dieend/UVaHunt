@@ -1,16 +1,11 @@
 package com.dieend.uvahunt;
 
-import java.util.Locale;
-
 import org.json.JSONException;
 
 import android.app.SearchManager;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.os.RemoteException;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -18,25 +13,24 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import com.dieend.uvahunt.callback.ProblemViewer;
 import com.dieend.uvahunt.model.User;
 import com.dieend.uvahunt.service.UhuntService;
+import com.dieend.uvahunt.service.UhuntServiceDelegate;
+import com.dieend.uvahunt.service.UhuntServiceHandler;
 import com.dieend.uvahunt.service.base.ServiceManager;
 
 
-public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer{
+public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer, UhuntServiceDelegate{
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
     private ActionBarDrawerToggle mDrawerToggle;
@@ -44,7 +38,6 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer{
     private CharSequence mDrawerTitle;
     private CharSequence mTitle;
     private String[] mMenuTitles;
-    private String uid;
     
     public static final String TAG = "com.dieend.uvahunt";
     public static final String PREFERENCES_FILE= TAG + ".PREFERENCES";
@@ -52,48 +45,11 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer{
     private ServiceManager uhuntService;
     private User user;
     private boolean ready;
-    private boolean problemReady = false;
-	private boolean profileReady = false;
-    private static class MessageHandler extends Handler {
-    	UvaHuntActivity callee;
-    	private String userdata;
-    	public MessageHandler(UvaHuntActivity main) {
-    		callee = main;
-    	}
-    	
-		@Override
-		public void handleMessage(Message msg) {
-			try {
-				switch (msg.what) {
-				case UhuntService.MSG_PROFILE_READY:
-					callee.profileReady = true;
-					userdata = (String)msg.obj;
-					populateProblem();
-					break;
-				case UhuntService.MSG_DETAIL_PROBLEM_READY:
-					callee.problemReady = true;
-					populateProblem();
-					break;
-				case UhuntService.MSG_READY:
-					callee.uhuntService.send(Message.obtain(null, UhuntService.MSG_REQUEST_PROFILE, callee.uid)); 
-					break;
-				}
-			} catch (RemoteException ex) {
-				ex.printStackTrace();
-			}
-			super.handleMessage(msg);
-		}
-    	private void populateProblem() throws RemoteException{
-    		if (callee.problemReady && callee.profileReady) {
-    			callee.ready(userdata);
-			}
-    	}
-    };
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent = getIntent();
-        uid = intent.getStringExtra("uid");
         Log.d(TAG, "username = " + intent.getStringExtra("username"));
         Log.d(TAG, "uid = " + intent.getStringExtra("uid"));
     	setContentView(R.layout.activity_main);
@@ -135,7 +91,7 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer{
             }
         };
         mDrawerLayout.setDrawerListener(mDrawerToggle);
-        uhuntService = new ServiceManager(this, UhuntService.class, new MessageHandler(this));
+        uhuntService = new ServiceManager(this, UhuntService.class, new UhuntServiceHandler(this, intent.getStringExtra("uid")));
         uhuntService.start();
     }
     @Override
@@ -224,7 +180,8 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer{
         mDrawerList.setItemChecked(6, true);
         setTitle(problemTitles);
     }
-    private void ready(String json) {
+    @Override
+    public void uhuntReady(String json) {
     	ready = true;
 		try {
 			Log.d(TAG, json);
@@ -242,6 +199,10 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer{
         getSupportActionBar().setTitle(mTitle);
     }
 
+    @Override
+	public ServiceManager getServiceManager() {
+		return uhuntService;
+	}
     /**
      * When using the ActionBarDrawerToggle, you must call it during
      * onPostCreate() and onConfigurationChanged()...
@@ -257,32 +218,8 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer{
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        // Pass any configuration change to the drawer toggls
+        // Pass any configuration change to the drawer toggle
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
 
-    /**
-     * Fragment that appears in the "content_frame", shows a planet
-     */
-    public static class PlanetFragment extends Fragment {
-        public static final String ARG_PLANET_NUMBER = "planet_number";
-
-        public PlanetFragment() {
-            // Empty constructor required for fragment subclasses
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_planet, container, false);
-            int i = getArguments().getInt(ARG_PLANET_NUMBER);
-            String planet = getResources().getStringArray(R.array.drawer_items)[i];
-
-            int imageId = getResources().getIdentifier(planet.toLowerCase(Locale.getDefault()),
-                            "drawable", getActivity().getPackageName());
-            ((ImageView) rootView.findViewById(R.id.image)).setImageResource(imageId);
-            getActivity().setTitle(planet);
-            return rootView;
-        }
-    }
 }

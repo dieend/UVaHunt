@@ -126,7 +126,6 @@ public class DBManager {
 	    values.put(DBHelper.PROBLEM_COLUMN_PRESENTATION_ERROR, nPE);
 	    values.put(DBHelper.PROBLEM_COLUMN_ACCEPTED, nAC);
 	    values.put(DBHelper.PROBLEM_COLUMN_RUNTIME_LIMIT, timeLimit);
-	    values.put(DBHelper.PROBLEM_COLUMN_IS_SOLVED, Problem.isSolved(id));
 	    db.insertWithOnConflict(DBHelper.PROBLEM_TABLE, null,values, SQLiteDatabase.CONFLICT_REPLACE);
 	    return new Problem(
 	    		id,
@@ -142,8 +141,7 @@ public class DBManager {
 	    	    nWA,
 	    	    nPE,
 	    	    nAC,
-	    	    timeLimit,
-	    	    Problem.isSolved(id));
+	    	    timeLimit);
 	}
 	public void populateProblem(String json) {
 		problemsById = new SparseArray<Problem>();
@@ -214,8 +212,7 @@ public class DBManager {
 				cursor.getInt(10), 
 				cursor.getInt(11), 
 				cursor.getInt(12), 
-				cursor.getInt(13), 
-				cursor.getInt(14)>0);
+				cursor.getInt(13));
 		return ret;
 	}
 }

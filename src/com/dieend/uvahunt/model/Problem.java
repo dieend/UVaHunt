@@ -23,7 +23,6 @@ public class Problem {
 	int numOfWrongAnswer;
 	int numOfPresentationError;
 	int numOfAccepted;
-	boolean solved;
 
 	Problem(int id,
 		int number,
@@ -38,8 +37,7 @@ public class Problem {
 		int numOfWrongAnswer,
 		int numOfPresentationError,
 		int numOfAccepted,
-		int runtimeLimit,
-		boolean solved) {
+		int runtimeLimit) {
 		this.id = id;
 		this.number = number;
 		this.title = title;
@@ -54,7 +52,6 @@ public class Problem {
 		this.numOfWrongAnswer = numOfWrongAnswer;
 		this.numOfPresentationError = numOfPresentationError;
 		this.numOfAccepted = numOfAccepted;
-		this.solved = solved;
 	}
 	public int getId() {
 		return id;
@@ -99,7 +96,7 @@ public class Problem {
 		return numOfAccepted;
 	}
 	public boolean isSolved() {
-		return solved;
+		return isSolved(id);
 	}
 	public static boolean isSolved(int pid) {
 		return solveds.contains(pid);
@@ -121,7 +118,6 @@ public class Problem {
 						solveds.add(j*32 + i); 
 					}
 				}
-				
 			}
 		} catch (JSONException e) {
 			e.printStackTrace();
