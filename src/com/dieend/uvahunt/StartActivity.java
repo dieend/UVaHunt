@@ -68,11 +68,12 @@ public class StartActivity extends Activity{
 		new LoginTask().execute("http://uhunt.felix-halim.net/api/uname2uid/" + username);
 	}
 	private class LoginTask extends AsyncTask<String, Integer, String> {
-
+		String url;
+		
 		@Override
 		protected String doInBackground(String... params) {
 			HttpClient client = new DefaultHttpClient();
-			String url = params[0];
+			url = params[0];
 		    HttpGet request = new HttpGet(url);
 		    HttpResponse response;
 		    String result = null;
@@ -87,6 +88,7 @@ public class StartActivity extends Activity{
 		        }
 		        return result.trim();
 		    } catch (Exception e1) {
+		    	e1.printStackTrace();
 		    	return null;
 		    }
 		}
@@ -94,10 +96,14 @@ public class StartActivity extends Activity{
 		@Override
 		protected void onPostExecute(String result) {
 			super.onPostExecute(result);
-			preference.edit()
-				.putString("uid", result)
-				.commit();
-			finishLogin();
+			if (result == null) {
+				new LoginTask().execute(url);
+			} else {
+				preference.edit()
+					.putString("uid", result)
+					.commit();
+				finishLogin();
+			}
 		}
 		
 	}

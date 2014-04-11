@@ -2,9 +2,7 @@ package com.dieend.uvahunt;
 
 import java.util.Locale;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.app.SearchManager;
 import android.content.Intent;
@@ -32,14 +30,13 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.dieend.uvahunt.model.DBManager;
-import com.dieend.uvahunt.model.Submission;
+import com.dieend.uvahunt.callback.ProblemViewer;
 import com.dieend.uvahunt.model.User;
 import com.dieend.uvahunt.service.UhuntService;
 import com.dieend.uvahunt.service.base.ServiceManager;
 
 
-public class UvaHuntActivity extends ActionBarActivity {
+public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer{
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
     private ActionBarDrawerToggle mDrawerToggle;
@@ -89,14 +86,12 @@ public class UvaHuntActivity extends ActionBarActivity {
     	private void populateProblem() throws RemoteException{
     		if (callee.problemReady && callee.profileReady) {
     			callee.ready(userdata);
-    			callee.uhuntService.send(Message.obtain(null, UhuntService.MSG_REQUEST_POPULATE_PROBLEM_DB));
 			}
     	}
     };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        DBManager.prepare(this);
         Intent intent = getIntent();
         uid = intent.getStringExtra("uid");
         Log.d(TAG, "username = " + intent.getStringExtra("username"));
@@ -220,6 +215,14 @@ public class UvaHuntActivity extends ActionBarActivity {
         mDrawerList.setItemChecked(position, true);
         setTitle(mMenuTitles[position]);
         mDrawerLayout.closeDrawer(mDrawerList);
+    }
+    @Override
+    public void showProblem(int problemNumber, String problemTitles) {
+    	Fragment fragment = ProblemViewFragment.newInstance(problemNumber);
+    	FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
+        mDrawerList.setItemChecked(6, true);
+        setTitle(problemTitles);
     }
     private void ready(String json) {
     	ready = true;

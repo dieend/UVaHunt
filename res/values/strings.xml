@@ -15,7 +15,7 @@
   -->
 
 <resources>
-    <string name="app_name">Navigation Drawer Example</string>
+    <string name="app_name">UvaHunt</string>
     <string-array name="drawer_items">
         <item>@string/profile</item>
         <item>@string/submission_statistics</item>

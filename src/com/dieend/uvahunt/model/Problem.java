@@ -1,8 +1,8 @@
 package com.dieend.uvahunt.model;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,6 +40,21 @@ public class Problem {
 		int numOfAccepted,
 		int runtimeLimit,
 		boolean solved) {
+		this.id = id;
+		this.number = number;
+		this.title = title;
+		this.dacu = dacu;
+		this.bestRuntime = bestRuntime;
+		this.runtimeLimit = runtimeLimit;
+		this.bestMemory = bestMemory;
+		this.numOfRuntimeError = numOfRuntimeError;
+		this.numOfOutputLimitError = numOfOutputLimitError;
+		this.numOfTimeLimitError = numOfTimeLimitError;
+		this.numOfMemoryLimitError = numOfMemoryLimitError;
+		this.numOfWrongAnswer = numOfWrongAnswer;
+		this.numOfPresentationError = numOfPresentationError;
+		this.numOfAccepted = numOfAccepted;
+		this.solved = solved;
 	}
 	public int getId() {
 		return id;
@@ -89,7 +104,7 @@ public class Problem {
 	public static boolean isSolved(int pid) {
 		return solveds.contains(pid);
 	}
-	private static Set<Integer> solveds = new HashSet<Integer>();
+	private static Set<Integer> solveds = new TreeSet<Integer>();
 	public static Set<Integer> solvedProblems() {
 		return Collections.unmodifiableSet(solveds);
 	}

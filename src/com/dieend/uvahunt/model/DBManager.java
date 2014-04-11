@@ -1,8 +1,5 @@
 package com.dieend.uvahunt.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 
@@ -180,14 +177,20 @@ public class DBManager {
 	}
 	private SparseArray<Problem> problemsById = null;
 	private SparseIntArray problemsNumToId = null;
-	public void queryAllProblem() {
+	public boolean queryAllProblem() {
 		Cursor cursor = db.query(DBHelper.PROBLEM_TABLE, DBHelper.PROBLEM_COLUMNS, null, null, null, null, null);
-		cursor.moveToFirst();
-		List<Problem> ret = new ArrayList<Problem>();
-		while (!cursor.isAfterLast()) {
-			ret.add(cursorToProblem(cursor));
-			cursor.moveToNext();
+		boolean ret = cursor.moveToFirst();
+		if (ret) {
+			problemsById = new SparseArray<Problem>();
+			problemsNumToId = new SparseIntArray();
+			while (!cursor.isAfterLast()) {
+				Problem p = cursorToProblem(cursor);
+				problemsById.put(p.id, p);
+				problemsNumToId.put(p.number, p.id);
+				cursor.moveToNext();
+			}
 		}
+		return ret;
 	}
 	public Problem getProblemsById(int id) {
 		if (problemsById == null) throw new RuntimeException("problems not initiated");

@@ -3,6 +3,8 @@ package com.dieend.uvahunt.service.base;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import com.dieend.uvahunt.UvaHuntActivity;
+
 import android.app.Service;
 import android.content.Intent;
 import android.os.Handler;
@@ -29,6 +31,11 @@ public abstract class AbstractService extends Service {
             case MSG_REGISTER_CLIENT:
             	Log.i("MyService", "Client registered: "+msg.replyTo);
                 service.mClients.add(msg.replyTo);
+                synchronized (service) {
+                	service.registered = true;
+                	service.notifyAll();
+                	Log.d(UvaHuntActivity.TAG, "notified registered");
+    			}
                 service.onRegisteredService();
                 break;
             case MSG_UNREGISTER_CLIENT:
@@ -74,6 +81,25 @@ public abstract class AbstractService extends Service {
     static String MsgString(Message msg) {
     	return String.format(Locale.getDefault(), "{what=%d,obj=%s}", msg.what, msg);
     }
+    protected void send(Message msg, boolean mustArrive) {
+    	if (mustArrive) {
+    		waitUntilReady();
+    	}
+    	send(msg);
+    }
+    private void waitUntilReady() {
+    	synchronized (this) {
+    		if (!registered) {
+				try {
+					Log.d(UvaHuntActivity.TAG, "waiting until registered ");
+					wait();
+					Log.d(UvaHuntActivity.TAG, "finished waiting");
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
     protected void send(Message msg) {
    	 for (int i=mClients.size()-1; i>=0; i--) {
             try {
@@ -87,8 +113,8 @@ public abstract class AbstractService extends Service {
             }
         }    	
    }
-
-
+   
+    protected Boolean registered = false;
     public abstract void onStartService();
     public abstract void onRegisteredService();
     public abstract void onUnregisteredService();

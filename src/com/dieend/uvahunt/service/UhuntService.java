@@ -8,6 +8,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpConnectionParams;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -32,14 +33,19 @@ public class UhuntService extends AbstractService {
 		public void run() {
 			SharedPreferences sp = getApplicationContext().getSharedPreferences(UvaHuntActivity.PREFERENCES_FILE, Context.MODE_PRIVATE);
 			long time = new Date().getTime();
+			Log.d(UvaHuntActivity.TAG, "last update" + sp.getLong(KEY_LAST_UPDATE, 0L) + ", now: "+ time);
 			if (time - sp.getLong(KEY_LAST_UPDATE, 0L) > (1000L * 60L * 60L * 12L)) {
-				sp.edit().putLong(KEY_LAST_UPDATE, time);
 				Log.i(UvaHuntActivity.TAG, "updating problem database");
 			} else {
-				send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY));
-				return;
+				if (DBManager.$().queryAllProblem()) {
+					send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY), true);
+					return;
+				} else {
+					Log.i(UvaHuntActivity.TAG, "updating problem database");
+				}
 			}
 			HttpClient client = new DefaultHttpClient();
+			HttpConnectionParams.setConnectionTimeout(client.getParams(), 10000);
 			Log.i(UvaHuntActivity.TAG, "connecting: " + url);
 		    HttpGet request = new HttpGet(url);
 		    HttpResponse response;
@@ -53,27 +59,32 @@ public class UhuntService extends AbstractService {
 		            result = Utility.convertStreamToString(instream);
 		            instream.close();
 		        }
-		        problemDetail = result;
-		        send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY));
+	        	
+				DBManager.$().populateProblem(result);
+				sp.edit().putLong(KEY_LAST_UPDATE, time).commit();
+		        send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY), true);
 		    } catch (Exception e1) {
 		    	e1.printStackTrace();
+		    	if (sp.getLong(KEY_LAST_UPDATE, 0L) != 0L) {
+		    		DBManager.$().queryAllProblem();
+		    		send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY), true);
+		    	}
 		    }
 		    
 		}
 	}
 	private class ProblemSolvedTask implements Runnable {
-		String urls[] = new String[3];
-		String uid;
+		String urls[] = new String[2];
+		
 		public ProblemSolvedTask(String uid) {
-			this.uid = uid;
-			this.urls[0] = "http://uhunt.felix-halim.net/api/solved-bits/" + this.uid;
+			this.urls[0] = "http://uhunt.felix-halim.net/api/solved-bits/" + uid;
 			this.urls[1] = String.format("http://uhunt.felix-halim.net/api/ranklist/%s/0/0", uid);
-			this.urls[2] = String.format("http://uhunt.felix-halim.net/api/subs-user-last/%s", uid);
+//			this.urls[2] = String.format("http://uhunt.felix-halim.net/api/subs-user-last/%s", uid);
 		}
 		@Override
 		public void run() {
 			try {
-				String[] results = new String[2];
+				String results = "";
 				for (int i=0;i<urls.length; i++) {
 					HttpClient client = new DefaultHttpClient();
 				    HttpGet request = new HttpGet(urls[i]);
@@ -84,8 +95,8 @@ public class UhuntService extends AbstractService {
 			        if (entity != null) {
 			            InputStream instream = entity.getContent();
 			            if (i>0) {
-			            	results[i-1] = Utility.convertStreamToString(instream);
-			            	Log.i(UvaHuntActivity.TAG, "result of " + urls[i] + ": " + results[i-1]);
+			            	results = Utility.convertStreamToString(instream);
+			            	Log.i(UvaHuntActivity.TAG, "result of " + urls[i] + ": " + results);
 			            } else {
 			            	String res = Utility.convertStreamToString(instream);
 			            	Problem.populateSolvedProblem(res);
@@ -100,19 +111,10 @@ public class UhuntService extends AbstractService {
 		    }
 		}
 	}
-	private class ProblemToDatabaseTask implements Runnable {
-		@Override
-		public void run() {
-			if (problemDetail != null) {
-				DBManager.$().populateProblem(problemDetail);
-			} else {
-				DBManager.$().queryAllProblem();
-			}
-			send(Message.obtain(null, MSG_PROBLEM_DB_READY));
-		}
-	}
+	
 	@Override
 	public void onStartService() {
+		DBManager.prepare(getApplicationContext());
 		new Thread(new ProblemDetailTask()).start();
 	}
 
@@ -128,7 +130,6 @@ public class UhuntService extends AbstractService {
 	@Override
 	public void onStopService() {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -137,17 +138,11 @@ public class UhuntService extends AbstractService {
 		case MSG_REQUEST_PROFILE:
 			new Thread(new ProblemSolvedTask((String)msg.obj)).start();
 			break;
-		case MSG_REQUEST_POPULATE_PROBLEM_DB:
-			new Thread(new ProblemToDatabaseTask()).start();
-			break;
 		}
 	}
 	public static final int MSG_READY = 1;
 	public static final int MSG_DETAIL_PROBLEM_READY = 2;
 	public static final int MSG_PROFILE_READY = 3;
 	public static final int MSG_REQUEST_PROFILE = 4;
-	public static final int MSG_REQUEST_POPULATE_PROBLEM_DB = 5;
-	public static final int MSG_PROBLEM_DB_READY = 6;
-	private String problemDetail;
 
 }
