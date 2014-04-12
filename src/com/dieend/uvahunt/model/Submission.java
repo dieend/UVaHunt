@@ -50,13 +50,20 @@ public class Submission implements Serializable {
 	public int getLang() {
 		return lang;
 	}
+	public String getLangReadable() {
+		return convertLang(lang);
+	}
 	public int getRank() {
 		return rank;
+	}
+	public boolean isAccepted() {
+		return verdict == 90;
 	}
 	public static String convertVerdict(int verdictId) {
 		switch (verdictId) {
 		case 10 : return "Submission error";
 		case 15 : return "Can't be judged";
+		case 0	: // 0 also in queue
 		case 20 : return "In queue";
 		case 30 : return "Compile error";
 		case 35 : return "Restricted function";
@@ -68,6 +75,16 @@ public class Submission implements Serializable {
 		case 80 : return "PresentationE";
 		case 90 : return "Accepted";
 		default: return String.valueOf(verdictId);
+		}
+	}
+	public static String convertLang(int langId) {
+		switch (langId) {
+		case 1 : return "ANSI C";
+		case 2 : return "Java";
+		case 3 : return "C++";
+		case 4 : return "Pascal";
+		case 5 : return "C++11";
+		default: return String.valueOf(langId);
 		}
 	}
 }

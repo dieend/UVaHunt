@@ -44,8 +44,7 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
 
     private ServiceManager uhuntService;
     private User user;
-    private boolean ready;
-    
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,8 +90,10 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
             }
         };
         mDrawerLayout.setDrawerListener(mDrawerToggle);
+        selectItem(0);
         uhuntService = new ServiceManager(this, UhuntService.class, new UhuntServiceHandler(this, intent.getStringExtra("uid")));
         uhuntService.start();
+        findViewById(android.R.id.progress).setVisibility(View.GONE);
     }
     @Override
     public void onDestroy() {
@@ -151,48 +152,117 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
             selectItem(position);
         }
     }
-
+    enum FRAGMENT_TYPE{
+    	PROFILE_FRAGMENT,
+    	SUBMISSION_STATISTICS,
+    	SOLVED_PROBLEM_LEVEL,
+    	LATEST_SUBMISSION,
+    	COMPETITIVE_PROGRAMMING,
+    	SEARCH_PROBLEMS,
+    	RANK_LIST,
+    	LIVE_SUBMISSIONS,
+    	PROBLEM_STATISTICS
+    }
+    FRAGMENT_TYPE[] fragmentTypesArray = FRAGMENT_TYPE.values();
+    Fragment[] fragments = new Fragment[fragmentTypesArray.length];
     private void selectItem(int position) {
-    	if (!ready) return;
+    	FRAGMENT_TYPE type = fragmentTypesArray[position];
         // update the main content by replacing fragments
-    	Fragment fragment = null;
-    	switch (position) {
-    	case 0:
-    		fragment = new ProfileFragment();
-	        Bundle args = new Bundle();
-	        args.putSerializable("user", user);
-	        fragment.setArguments(args);
-    	}
-
+    	Fragment fragment = getFragment(type);
+    	
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
-
+        
+        switch (type) {
+	    	case PROFILE_FRAGMENT:
+	    		if (profileReady) ((ProfileFragment) fragment).updateProfile(user);
+	    		if (submissionReady) ((ProfileFragment) fragment).updateSubmission();
+	    		break;
+			case COMPETITIVE_PROGRAMMING:
+				break;
+			case LATEST_SUBMISSION:
+				break;
+			case LIVE_SUBMISSIONS:
+				break;
+			case PROBLEM_STATISTICS:
+				break;
+			case RANK_LIST:
+				break;
+			case SEARCH_PROBLEMS:
+				break;
+			case SUBMISSION_STATISTICS:
+				break;
+			case SOLVED_PROBLEM_LEVEL:
+				break;
+		}
         // update selected item and title, then close the drawer
         mDrawerList.setItemChecked(position, true);
         setTitle(mMenuTitles[position]);
         mDrawerLayout.closeDrawer(mDrawerList);
     }
-    @Override
-    public void showProblem(int problemNumber, String problemTitles) {
-    	Fragment fragment = ProblemViewFragment.newInstance(problemNumber);
-    	FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
-        mDrawerList.setItemChecked(6, true);
-        setTitle(problemTitles);
+    
+    
+    private synchronized Fragment getFragment(FRAGMENT_TYPE type) {
+    	switch (type) {
+	    	case PROFILE_FRAGMENT:
+	    		if (fragments[type.ordinal()] == null) {
+	    			fragments[type.ordinal()] = new ProfileFragment();
+	    			Log.d(TAG, "creating new fragment");
+	    		}
+	    		break;
+			case COMPETITIVE_PROGRAMMING:
+				break;
+			case LATEST_SUBMISSION:
+				break;
+			case LIVE_SUBMISSIONS:
+				break;
+			case PROBLEM_STATISTICS:
+				break;
+			case RANK_LIST:
+				break;
+			case SEARCH_PROBLEMS:
+				if (fragments[type.ordinal()] == null) {
+					fragments[type.ordinal()] = new ProblemViewFragment();
+				}
+				break;
+			case SUBMISSION_STATISTICS:
+				break;
+			case SOLVED_PROBLEM_LEVEL:
+				break;
+    	}
+
+    	return fragments[type.ordinal()];
     }
     @Override
-    public void uhuntReady(String json) {
-    	ready = true;
+    public void showProblem(int problemNumber, String problemTitles) {
+    	ProblemViewFragment fragment = (ProblemViewFragment) getFragment(FRAGMENT_TYPE.SEARCH_PROBLEMS);
+    	fragment.loadProblem(problemNumber);
+    	FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
+        mDrawerList.setItemChecked(FRAGMENT_TYPE.SEARCH_PROBLEMS.ordinal(), true);
+        setTitle(problemTitles);
+    }
+    
+    private boolean profileReady = false;
+    @Override
+    public void profileReady(String json) {
+    	profileReady = true;
 		try {
 			Log.d(TAG, json);
 			user = new User(json);
+			ProfileFragment fragment = (ProfileFragment)getFragment(FRAGMENT_TYPE.PROFILE_FRAGMENT);
+			fragment.updateProfile(user);
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
-    	findViewById(android.R.id.progress).setVisibility(View.GONE);
-    	selectItem(0);
     }
-
+    private boolean submissionReady = false;
+    @Override
+	public void submissionReady() {
+    	submissionReady = true;
+    	ProfileFragment fragment = (ProfileFragment)getFragment(FRAGMENT_TYPE.PROFILE_FRAGMENT);
+		fragment.updateSubmission();
+	}
     @Override
     public void setTitle(CharSequence title) {
         mTitle = title;
@@ -221,5 +291,6 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
         // Pass any configuration change to the drawer toggle
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
+
 
 }

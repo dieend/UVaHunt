@@ -4,5 +4,6 @@ import com.dieend.uvahunt.service.base.ServiceManager;
 
 public interface UhuntServiceDelegate {
 	public ServiceManager getServiceManager();
-	public void uhuntReady(String userdata);
+	public void profileReady(String userdata);
+	public void submissionReady();
 }

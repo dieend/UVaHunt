@@ -7,8 +7,7 @@ import android.os.RemoteException;
 public class UhuntServiceHandler extends Handler {
 		UhuntServiceDelegate delegate;
     	private String userdata;
-    	private boolean problemReady = false;
-    	private boolean profileReady = false;
+    	
     	private String uid;
         
     	public UhuntServiceHandler(UhuntServiceDelegate main, String uid) {
@@ -21,16 +20,16 @@ public class UhuntServiceHandler extends Handler {
 			try {
 				switch (msg.what) {
 				case UhuntService.MSG_PROFILE_READY:
-					profileReady = true;
 					userdata = (String)msg.obj;
-					populateProblem();
+					delegate.profileReady(userdata);
 					break;
 				case UhuntService.MSG_DETAIL_PROBLEM_READY:
-					problemReady = true;
-					populateProblem();
 					break;
 				case UhuntService.MSG_READY:
 					delegate.getServiceManager().send(Message.obtain(null, UhuntService.MSG_REQUEST_PROFILE, uid)); 
+					break;
+				case UhuntService.MSG_DETAIL_SUBMISSION_READY:
+					delegate.submissionReady();
 					break;
 				}
 			} catch (RemoteException ex) {
@@ -38,9 +37,4 @@ public class UhuntServiceHandler extends Handler {
 			}
 			super.handleMessage(msg);
 		}
-    	private void populateProblem() throws RemoteException{
-    		if (problemReady && profileReady) {
-    			delegate.uhuntReady(userdata);
-			}
-    	}
 }

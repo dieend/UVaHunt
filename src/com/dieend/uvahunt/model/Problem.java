@@ -4,10 +4,6 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 public class Problem {
 	int id;
 	int number;
@@ -102,25 +98,21 @@ public class Problem {
 		return solveds.contains(pid);
 	}
 	private static Set<Integer> solveds = new TreeSet<Integer>();
+	private static Set<Integer> trieds = new TreeSet<Integer>();
+
 	public static Set<Integer> solvedProblems() {
 		return Collections.unmodifiableSet(solveds);
 	}
-	public static void populateSolvedProblem(String json) {
-		try {
-			JSONArray array = new JSONArray(json);
-			JSONObject obj = array.getJSONObject(0);
-			array = obj.getJSONArray("solved");
-			for (int j=0; j<array.length(); j++) {
-				int a = array.getInt(j);
-				for (int i = 0; i<32; i++) {
-					int ii = (1 << i);
-					if ((ii & a) == ii) {
-						solveds.add(j*32 + i); 
-					}
-				}
-			}
-		} catch (JSONException e) {
-			e.printStackTrace();
+	public static Set<Integer> triedProblems() {
+		return Collections.unmodifiableSet(trieds);
+	}
+	public static void solve(int id) {
+		solveds.add(id);
+		trieds.remove(id);
+	}
+	public static void tried(int id) {
+		if (!solveds.contains(id)) {
+			trieds.add(id);
 		}
 	}
 	
