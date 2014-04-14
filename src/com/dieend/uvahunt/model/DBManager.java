@@ -1,18 +1,22 @@
 package com.dieend.uvahunt.model;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
+
 import com.dieend.uvahunt.UvaHuntActivity;
 
 public class DBManager {
@@ -112,7 +116,9 @@ public class DBManager {
 		}
 	}
 	private static DBManager instance = null;
+	SharedPreferences sp;
 	private DBManager(Context context){
+		sp = context.getSharedPreferences(UvaHuntActivity.PREFERENCES_FILE, Context.MODE_PRIVATE);
 		dbHelper = new DBHelper(context);
 		db = dbHelper.getWritableDatabase();
 	}
@@ -156,7 +162,7 @@ public class DBManager {
 						data.getInt(1),
 						data.getInt(2),
 						data.getInt(3),
-						data.getInt(4),
+						data.getLong(4),
 						data.getInt(5),
 						data.getInt(6)
 					);
@@ -176,33 +182,58 @@ public class DBManager {
 		}
 	}
 
+	public Map<Integer, Submission> updateSubmissionFromLiveSubmission(JSONArray all, int uid) {
+		Map<Integer, Submission> ret = new TreeMap<Integer, Submission>();
+//		if (showAll)
+		try {
+			for (int i=0; i<all.length(); i++) {
+				JSONObject event = all.getJSONObject(i);
+				JSONObject submission = event.getJSONObject("msg");
+				Submission s = new Submission(submission.getInt("sid"), submission.getInt("pid"), submission.getInt("ver"), 
+						submission.getInt("run"), submission.getInt("sbt"), submission.getInt("lan"), submission.getInt("rank"));
+				if (submission.getInt("uid") == uid) {
+					createSubmission(s);
+				} 
+				ret.put(s.id, s);
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		return ret;
+	}
 	private Submission createSubmission(int id, int problemId, int verdict, int runtime,
-			int submitTime, int lang, int rank) {
+			long submitTime, int lang, int rank) {
+		return createSubmission(new Submission(id, problemId, verdict, runtime, submitTime, lang, rank));
+	}
+	private Submission createSubmission(Submission submission) {
 		ContentValues values = new ContentValues();
-		values.put(DBHelper.SUBMISSION_ID,id);
-		values.put(DBHelper.SUBMISSION_PROBLEM_ID,problemId);
-		values.put(DBHelper.SUBMISSION_VERDICT_ID,verdict);
-		values.put(DBHelper.SUBMISSION_RUNTIME,runtime);
-		values.put(DBHelper.SUBMISSION_SUBMIT_TIME,submitTime);
-		values.put(DBHelper.SUBMISSION_LANG,lang);
-		values.put(DBHelper.SUBMISSION_RANK,rank);
+		values.put(DBHelper.SUBMISSION_ID,submission.id);
+		values.put(DBHelper.SUBMISSION_PROBLEM_ID,submission.problemId);
+		values.put(DBHelper.SUBMISSION_VERDICT_ID,submission.verdict);
+		values.put(DBHelper.SUBMISSION_RUNTIME,submission.runtime);
+		values.put(DBHelper.SUBMISSION_SUBMIT_TIME,submission.submitTime);
+		values.put(DBHelper.SUBMISSION_LANG,submission.lang);
+		values.put(DBHelper.SUBMISSION_RANK,submission.rank);
 		db.insertWithOnConflict(DBHelper.SUBMISSION_TABLE, null, values, SQLiteDatabase.CONFLICT_REPLACE);
-		return new Submission(id, problemId, verdict, runtime, submitTime, lang, rank);
+		return submission;
+	}
+	public Map<Integer,Submission> getAllSubmission() {
+		return new TreeMap<Integer,Submission>(submissionById);
 	}
 	private Submission cursorToSubmission(Cursor cursor) {
 		Submission ret = new Submission(cursor.getInt(0), 
 				cursor.getInt(1), 
 				cursor.getInt(2), 
 				cursor.getInt(3), 
-				cursor.getInt(4), 
+				cursor.getLong(4), 
 				cursor.getInt(5), 
 				cursor.getInt(6));
 		return ret;
 	}
 	@SuppressLint("UseSparseArrays")
 	public boolean queryAllSubmission() {
-		submissionById = new HashMap<Integer,Submission>();
-		Cursor cursor = db.query(DBHelper.SUBMISSION_TABLE, DBHelper.SUBMISSION_COLUMNS, null, null, null, null, null);
+		submissionById = new TreeMap<Integer,Submission>();
+		Cursor cursor = db.query(DBHelper.SUBMISSION_TABLE, DBHelper.SUBMISSION_COLUMNS, null, null, null, null,null);
 		boolean ret = cursor.moveToFirst();
 		if (ret) {
 			while (!cursor.isAfterLast()) {

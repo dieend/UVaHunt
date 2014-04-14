@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+	
+    <RelativeLayout
+        android:id="@+id/background"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FE2E2E" >
+   		<TextView
+	        android:id="@+id/submit_time"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:textColor="#FFFFFF"
+	        android:text="Submit Time" />
+
+   		<FrameLayout
+   		    android:layout_width="wrap_content"
+   		    android:layout_height="wrap_content"
+   		    android:layout_toLeftOf="@+id/language"
+   		    android:layout_toRightOf="@id/submit_time" >
+   		    <TextView
+	        android:id="@+id/verdict"
+	        android:textColor="#FFFFFF"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_gravity="center_horizontal"
+	        android:text="Verdict" />
+   		</FrameLayout>
+	    <TextView
+	        android:id="@+id/language"
+	        android:textColor="#FFFFFF"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentRight="true"
+	        android:text="Lang" />
+	</RelativeLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+    <TextView
+        android:id="@+id/problem"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:text="Problem" />
+
+    <TextView
+        android:id="@+id/discuss"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:text="discuss" />
+	</RelativeLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+	<LinearLayout
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content" >
+
+    <TextView
+        android:id="@+id/execution_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        
+        android:text="Time" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="/" />
+    <TextView
+        android:id="@+id/best_execution_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        
+        android:text="Best" />
+    </LinearLayout>
+	<TextView
+        android:id="@+id/rank"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:text="Rank" />
+	</RelativeLayout>
+</LinearLayout>

@@ -9,6 +9,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
+import org.json.JSONArray;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -28,8 +29,8 @@ public class UhuntService extends AbstractService {
 	public static final Long DEFAULT_PROB_SYNC_FREQ = 1000L * 60L * 60L * 12L;
 	public static final String KEY_SUB_SYNC_FREQ = "submission_sync_frequency";
 	public static final Long DEFAULT_SUB_SYNC_FREQ = 1000L * 60L * 60L * 12L;
-	private class PrepareProblemDetailTask implements Runnable {
-		
+
+	private class PrepareProblemDetailTask implements Runnable {		
 		String url;
 		public PrepareProblemDetailTask() {
 			this.url = "http://uhunt.felix-halim.net/api/p";
@@ -74,6 +75,7 @@ public class UhuntService extends AbstractService {
 		    		DBManager.$().queryAllProblem();
 		    		send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY), true);
 		    	}
+		    	// TODO: retry download problem
 		    }
 		    
 		}
@@ -81,8 +83,8 @@ public class UhuntService extends AbstractService {
 	private class PrepareSubmissionTask implements Runnable {
 		String url;
 		private boolean updateAll = false;
-		public PrepareSubmissionTask(String uid) {
-			this.url = String.format("http://uhunt.felix-halim.net/api/subs-user/%s/", uid);
+		public PrepareSubmissionTask(int uid) {
+			this.url = String.format("http://uhunt.felix-halim.net/api/subs-user/%d/", uid);
 		}
 		@Override
 		public void run() {
@@ -94,7 +96,7 @@ public class UhuntService extends AbstractService {
 			}
 			int lastId = 0;
 			Submission lastSubmission = DBManager.$().getLastSubmission();
-			if (lastSubmission != null) {
+			if (lastSubmission == null) {
 				updateAll = true;
 			}
 			if (!updateAll) {
@@ -102,7 +104,7 @@ public class UhuntService extends AbstractService {
 			}
 			url += lastId;
 			HttpClient client = new DefaultHttpClient();
-			HttpConnectionParams.setConnectionTimeout(client.getParams(), 10000);
+//			HttpConnectionParams.setConnectionTimeout(client.getParams(), 10000);
 			Log.i(UvaHuntActivity.TAG, "connecting: " + url);
 		    HttpGet request = new HttpGet(url);
 		    HttpResponse response;
@@ -128,12 +130,43 @@ public class UhuntService extends AbstractService {
 		    }	
 		}
 	}
+	private class LiveSubmissionTask implements Runnable {
+		long eventId;
+		public LiveSubmissionTask(int eventId) {
+			this.eventId = eventId;
+		}
+		@Override
+		public void run() {
+			String url = "http://uhunt.felix-halim.net/api/poll/"+eventId;
+			HttpClient client = new DefaultHttpClient();
+			Log.i(UvaHuntActivity.TAG, "connecting: " + url);
+		    HttpGet request = new HttpGet(url);
+		    HttpResponse response;
+		    String result = null;
+			try {
+		        response = client.execute(request);         
+		        HttpEntity entity = response.getEntity();
+		        if (entity != null) {
+		            InputStream instream = entity.getContent();
+		            result = Utility.convertStreamToString(instream);
+		            instream.close();
+		        }
+		        JSONArray arr = new JSONArray(result);
+		        send(Message.obtain(null, MSG_NEW_EVENT, DBManager.$().updateSubmissionFromLiveSubmission(arr, uid)));
+		        eventId = arr.getJSONObject(arr.length()-1).getLong("id");
+		        if (liveUpdate) {
+		        	new Thread(this).start();
+		        }
+		    } catch (Exception e1) {
+		    	e1.printStackTrace();
+		    }	
+		}
+	}
 	private class PrepareProfileTask implements Runnable {
 		String url;
 		
-		public PrepareProfileTask(String uid) {
-			//this.urls[0] = "http://uhunt.felix-halim.net/api/solved-bits/" + uid;
-			this.url = String.format("http://uhunt.felix-halim.net/api/ranklist/%s/0/0", uid);
+		public PrepareProfileTask(int uid) {
+			this.url = String.format("http://uhunt.felix-halim.net/api/ranklist/%d/0/0", uid);
 		}
 		@Override
 		public void run() {
@@ -167,7 +200,7 @@ public class UhuntService extends AbstractService {
 
 	@Override
 	public void onRegisteredService() {
-		send(Message.obtain(null, MSG_READY));
+		send(Message.obtain(null, MSG_READY, liveUpdate));
 	}
 
 	@Override
@@ -183,8 +216,16 @@ public class UhuntService extends AbstractService {
 	public void onReceiveMessage(Message msg) {
 		switch (msg.what) {
 		case MSG_REQUEST_PROFILE:
-			new Thread(new PrepareSubmissionTask((String)msg.obj)).start();
-			new Thread(new PrepareProfileTask((String)msg.obj)).start();
+			uid = msg.arg1;
+			new Thread(new PrepareSubmissionTask(uid)).start();
+			new Thread(new PrepareProfileTask(uid)).start();
+			break;
+		case MSG_ENABLE_LIVE_UPDATER:
+			liveUpdate = true;
+			new Thread(new LiveSubmissionTask(0)).start();
+			break;
+		case MSG_DISABLE_LIVE_UPDATER:
+			liveUpdate = false;
 			break;
 		}
 	}
@@ -193,5 +234,9 @@ public class UhuntService extends AbstractService {
 	public static final int MSG_PROFILE_READY = 3;
 	public static final int MSG_REQUEST_PROFILE = 4;
 	public static final int MSG_DETAIL_SUBMISSION_READY = 5;
-
+	public static final int MSG_NEW_EVENT = 6;
+	public static final int MSG_ENABLE_LIVE_UPDATER = 7;
+	public static final int MSG_DISABLE_LIVE_UPDATER = 8;
+	private int uid;
+	private boolean liveUpdate = false;
 }

@@ -1,9 +1,14 @@
 package com.dieend.uvahunt.service;
 
-import com.dieend.uvahunt.service.base.ServiceManager;
+import java.util.Map;
+
+import com.dieend.uvahunt.model.Submission;
+import com.dieend.uvahunt.model.User;
 
 public interface UhuntServiceDelegate {
-	public ServiceManager getServiceManager();
-	public void profileReady(String userdata);
+	public void profileReady(User userdata);
 	public void submissionReady();
+	public void serviceReady(boolean liveUpdateActive);
+	public void submissionArrival(Map<Integer, Submission> submissions);
+	
 }

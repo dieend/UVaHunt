@@ -26,12 +26,6 @@ public class ProfileFragment extends BaseFragment{
 		super.onDestroyView();
 	}
 
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		
-	}
-
 	private ClickableSpan onClickViewProblem(final int number, final String title) {
 		return new ClickableSpan() {
 			

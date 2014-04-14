@@ -1,11 +1,13 @@
 package com.dieend.uvahunt;
 
-import org.json.JSONException;
+import java.util.Map;
 
 import android.app.SearchManager;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.Message;
+import android.os.RemoteException;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -22,7 +24,10 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.dieend.uvahunt.callback.LiveUpdaterHandler;
 import com.dieend.uvahunt.callback.ProblemViewer;
+import com.dieend.uvahunt.model.DBManager;
+import com.dieend.uvahunt.model.Submission;
 import com.dieend.uvahunt.model.User;
 import com.dieend.uvahunt.service.UhuntService;
 import com.dieend.uvahunt.service.UhuntServiceDelegate;
@@ -30,7 +35,7 @@ import com.dieend.uvahunt.service.UhuntServiceHandler;
 import com.dieend.uvahunt.service.base.ServiceManager;
 
 
-public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer, UhuntServiceDelegate{
+public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer, UhuntServiceDelegate, LiveUpdaterHandler{
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
     private ActionBarDrawerToggle mDrawerToggle;
@@ -43,7 +48,9 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     public static final String PREFERENCES_FILE= TAG + ".PREFERENCES";
 
     private ServiceManager uhuntService;
+    private int uid;
     private User user;
+    private boolean isLiveUpdate = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,7 +98,8 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
         };
         mDrawerLayout.setDrawerListener(mDrawerToggle);
         selectItem(0);
-        uhuntService = new ServiceManager(this, UhuntService.class, new UhuntServiceHandler(this, intent.getStringExtra("uid")));
+        uid = Integer.parseInt(intent.getStringExtra("uid"));
+        uhuntService = new ServiceManager(this, UhuntService.class, new UhuntServiceHandler(this));
         uhuntService.start();
         findViewById(android.R.id.progress).setVisibility(View.GONE);
     }
@@ -160,20 +168,20 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     	COMPETITIVE_PROGRAMMING,
     	SEARCH_PROBLEMS,
     	RANK_LIST,
-    	LIVE_SUBMISSIONS,
     	PROBLEM_STATISTICS
     }
     FRAGMENT_TYPE[] fragmentTypesArray = FRAGMENT_TYPE.values();
     Fragment[] fragments = new Fragment[fragmentTypesArray.length];
+    FRAGMENT_TYPE selectedItem;
     private void selectItem(int position) {
-    	FRAGMENT_TYPE type = fragmentTypesArray[position];
+    	selectedItem = fragmentTypesArray[position];
         // update the main content by replacing fragments
-    	Fragment fragment = getFragment(type);
+    	Fragment fragment = getFragment(selectedItem);
     	
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
         
-        switch (type) {
+        switch (selectedItem) {
 	    	case PROFILE_FRAGMENT:
 	    		if (profileReady) ((ProfileFragment) fragment).updateProfile(user);
 	    		if (submissionReady) ((ProfileFragment) fragment).updateSubmission();
@@ -181,8 +189,9 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
 			case COMPETITIVE_PROGRAMMING:
 				break;
 			case LATEST_SUBMISSION:
-				break;
-			case LIVE_SUBMISSIONS:
+				((LatestSubmissionFragment)fragment).setToggleState(isLiveUpdate);
+				Map<Integer,Submission> data = DBManager.$().getAllSubmission();
+				if (submissionReady) ((LatestSubmissionFragment)fragment).updateSubmission(data);
 				break;
 			case PROBLEM_STATISTICS:
 				break;
@@ -203,34 +212,29 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     
     
     private synchronized Fragment getFragment(FRAGMENT_TYPE type) {
-    	switch (type) {
-	    	case PROFILE_FRAGMENT:
-	    		if (fragments[type.ordinal()] == null) {
-	    			fragments[type.ordinal()] = new ProfileFragment();
-	    			Log.d(TAG, "creating new fragment");
-	    		}
-	    		break;
-			case COMPETITIVE_PROGRAMMING:
-				break;
-			case LATEST_SUBMISSION:
-				break;
-			case LIVE_SUBMISSIONS:
-				break;
-			case PROBLEM_STATISTICS:
-				break;
-			case RANK_LIST:
-				break;
-			case SEARCH_PROBLEMS:
-				if (fragments[type.ordinal()] == null) {
+    	if (fragments[type.ordinal()] == null) {
+	    	switch (type) {
+		    	case PROFILE_FRAGMENT:
+		    		fragments[type.ordinal()] = new ProfileFragment();
+		    		break;
+				case COMPETITIVE_PROGRAMMING:
+					break;
+				case LATEST_SUBMISSION:
+					fragments[type.ordinal()] = new LatestSubmissionFragment();
+					break;
+				case PROBLEM_STATISTICS:
+					break;
+				case RANK_LIST:
+					break;
+				case SEARCH_PROBLEMS:
 					fragments[type.ordinal()] = new ProblemViewFragment();
-				}
-				break;
-			case SUBMISSION_STATISTICS:
-				break;
-			case SOLVED_PROBLEM_LEVEL:
-				break;
-    	}
-
+					break;
+				case SUBMISSION_STATISTICS:
+					break;
+				case SOLVED_PROBLEM_LEVEL:
+					break;
+	    	}
+		}
     	return fragments[type.ordinal()];
     }
     @Override
@@ -245,31 +249,37 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     
     private boolean profileReady = false;
     @Override
-    public void profileReady(String json) {
+    public void profileReady(User json) {
     	profileReady = true;
-		try {
-			Log.d(TAG, json);
-			user = new User(json);
+    	user = json;
+    	if (selectedItem == FRAGMENT_TYPE.PROFILE_FRAGMENT) {
 			ProfileFragment fragment = (ProfileFragment)getFragment(FRAGMENT_TYPE.PROFILE_FRAGMENT);
 			fragment.updateProfile(user);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
+		
+    	}
     }
     private boolean submissionReady = false;
     @Override
 	public void submissionReady() {
     	submissionReady = true;
-    	ProfileFragment fragment = (ProfileFragment)getFragment(FRAGMENT_TYPE.PROFILE_FRAGMENT);
-		fragment.updateSubmission();
+    	if (selectedItem == FRAGMENT_TYPE.PROFILE_FRAGMENT) {
+	    	ProfileFragment fragment = (ProfileFragment)getFragment(FRAGMENT_TYPE.PROFILE_FRAGMENT);
+			fragment.updateSubmission();
+    	}
 	}
+    @Override
+    public void submissionArrival(Map<Integer, Submission> submissions) {
+    	if (selectedItem == FRAGMENT_TYPE.LATEST_SUBMISSION) {
+    		LatestSubmissionFragment fragment = (LatestSubmissionFragment) getFragment(FRAGMENT_TYPE.LATEST_SUBMISSION);
+        	fragment.updateSubmission(submissions);
+    	}
+    }
     @Override
     public void setTitle(CharSequence title) {
         mTitle = title;
         getSupportActionBar().setTitle(mTitle);
     }
 
-    @Override
 	public ServiceManager getServiceManager() {
 		return uhuntService;
 	}
@@ -291,6 +301,31 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
         // Pass any configuration change to the drawer toggle
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
+	@Override
+	public void serviceReady(boolean liveUpdateActive) {
+		try {
+			isLiveUpdate = liveUpdateActive;
+			getServiceManager().send(Message.obtain(null, UhuntService.MSG_REQUEST_PROFILE, uid, 0));
+		} catch (RemoteException ex) {
+			ex.printStackTrace();
+		}
+	}
+	@Override
+	public void enableLiveUpdate() {
+		try {
+			uhuntService.send(Message.obtain(null, UhuntService.MSG_ENABLE_LIVE_UPDATER));
+		} catch (RemoteException ex) {
+			ex.printStackTrace();
+		}
+	}
+	@Override
+	public void disableLiveUpdate() {
+		try {
+			uhuntService.send(Message.obtain(null, UhuntService.MSG_DISABLE_LIVE_UPDATER));
+		} catch (RemoteException ex) {
+			ex.printStackTrace();
+		}
+	}
 
 
 }

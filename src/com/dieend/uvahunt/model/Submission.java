@@ -1,17 +1,20 @@
 package com.dieend.uvahunt.model;
 
 import java.io.Serializable;
+import java.util.Comparator;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 
-public class Submission implements Serializable {
+import android.text.format.DateUtils;
+
+public class Submission implements Serializable, Comparable<Submission>{
 	private static final long serialVersionUID = 1L;
 	int id;
 	int problemId;
 	int verdict;
 	int runtime;
-	int submitTime;
+	long submitTime;
 	int lang;
 	int rank;
 	public Submission(JSONArray arr) throws JSONException {
@@ -19,7 +22,7 @@ public class Submission implements Serializable {
 				arr.getInt(4), arr.getInt(5), arr.getInt(6));
 	}
 	public Submission(int id, int problemId, int verdict, int runtime,
-			int submitTime, int lang, int rank) {
+			long submitTime, int lang, int rank) {
 		super();
 		this.id = id;
 		this.problemId = problemId;
@@ -39,19 +42,20 @@ public class Submission implements Serializable {
 		return verdict;
 	}
 	public String getVerdictReadable() {
-		return convertVerdict(verdict);
+		return getReadableVerdict(this);
 	}
 	public int getRuntime() {
 		return runtime;
 	}
-	public int getSubmitTime() {
+	public long getSubmitTime() {
 		return submitTime;
 	}
+	
 	public int getLang() {
 		return lang;
 	}
 	public String getLangReadable() {
-		return convertLang(lang);
+		return getReadableLang(this);
 	}
 	public int getRank() {
 		return rank;
@@ -59,7 +63,8 @@ public class Submission implements Serializable {
 	public boolean isAccepted() {
 		return verdict == 90;
 	}
-	public static String convertVerdict(int verdictId) {
+	public static String getReadableVerdict(Submission s) {
+		int verdictId = s.getVerdict();
 		switch (verdictId) {
 		case 10 : return "Submission error";
 		case 15 : return "Can't be judged";
@@ -77,7 +82,32 @@ public class Submission implements Serializable {
 		default: return String.valueOf(verdictId);
 		}
 	}
-	public static String convertLang(int langId) {
+	public static String getReadableTime(Submission s) {
+		return (String) DateUtils.getRelativeTimeSpanString(System.currentTimeMillis(),
+				s.submitTime, DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
+	}
+	public static String verdictToColor(Submission s) {
+		int verdict = s.getVerdict();
+		switch (verdict) {
+			case 10 : return "#088A85";
+			case 15 : return "#088A85";
+			case 0	: // 0 also in queue
+			case 20 : return "#585858";
+			case 30 : return "#A9E2F3";
+			case 35 : return "#000000";
+			case 40 : return "#A9E2F3";
+			case 45 : return "#F4FA58";
+			case 50 : return "#0000FF";
+			case 60 : return "#C8FE2E";
+			case 70 : return "#FE2E2E";
+			case 80 : return "#9FF781";
+			case 90 : return "#01DF01";
+			default: return "#000000";
+		}
+		
+	}
+	public static String getReadableLang(Submission s) {
+		int langId = s.lang;
 		switch (langId) {
 		case 1 : return "ANSI C";
 		case 2 : return "Java";
@@ -87,4 +117,20 @@ public class Submission implements Serializable {
 		default: return String.valueOf(langId);
 		}
 	}
+	@Override
+	public int compareTo(Submission another) {
+		return id - another.id;
+	}
+	private static final Descending descender = new Descending();
+	public static Comparator<Submission> descending() {
+		return descender;
+	}
+	private static class Descending implements Comparator<Submission> {
+		@Override
+		public int compare(Submission lhs, Submission rhs) {
+			return -1 * (lhs.compareTo(rhs));
+		}
+		
+	}
+
 }
