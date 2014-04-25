@@ -48,7 +48,7 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     public static final String PREFERENCES_FILE= TAG + ".PREFERENCES";
 
     private ServiceManager uhuntService;
-    private int uid;
+    int uid;
     private User user;
     private boolean isLiveUpdate = false;
 
@@ -71,6 +71,7 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
         // set up the drawer's list view with items and click listener
         mDrawerList.setAdapter(new ArrayAdapter<String>(this,
                 R.layout.drawer_list_item, mMenuTitles));
+        mDrawerList.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
         mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
 
         // enable ActionBar app icon to behave as action to toggle nav drawer
@@ -102,8 +103,16 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
         uhuntService = new ServiceManager(this, UhuntService.class, new UhuntServiceHandler(this));
         uhuntService.start();
         findViewById(android.R.id.progress).setVisibility(View.GONE);
+        Log.d("AAAA", "here2");
     }
+    
     @Override
+	protected void onResume() {
+		super.onResume();
+		Log.d("AAAA", "here1");
+	}
+
+	@Override
     public void onDestroy() {
     	super.onDestroy();
     	try {
@@ -122,6 +131,7 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     /* Called whenever we call invalidateOptionsMenu() */
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
+    	Log.d("AAAA", "here3");
         // If the nav drawer is open, hide action items related to the content view
         boolean drawerOpen = mDrawerLayout.isDrawerOpen(mDrawerList);
         menu.findItem(R.id.action_websearch).setVisible(!drawerOpen);
@@ -173,7 +183,8 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     FRAGMENT_TYPE[] fragmentTypesArray = FRAGMENT_TYPE.values();
     Fragment[] fragments = new Fragment[fragmentTypesArray.length];
     FRAGMENT_TYPE selectedItem;
-    private void selectItem(int position) {
+	private void selectItem(int position) {
+    	Log.d("AAAA", "select1");
     	selectedItem = fragmentTypesArray[position];
         // update the main content by replacing fragments
     	Fragment fragment = getFragment(selectedItem);
@@ -206,8 +217,10 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
 		}
         // update selected item and title, then close the drawer
         mDrawerList.setItemChecked(position, true);
+        
         setTitle(mMenuTitles[position]);
         mDrawerLayout.closeDrawer(mDrawerList);
+        Log.d("AAAA", "select1");
     }
     
     
@@ -291,13 +304,16 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
+        Log.d("AAAA", "here6");
         // Sync the toggle state after onRestoreInstanceState has occurred.
         mDrawerToggle.syncState();
+        Log.d("AAAA", "here7");
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        Log.d("AAAA", "here7");
         // Pass any configuration change to the drawer toggle
         mDrawerToggle.onConfigurationChanged(newConfig);
     }

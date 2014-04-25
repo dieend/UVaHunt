@@ -151,7 +151,7 @@ public class DBManager {
 		}
 	}
 	private Map<Integer, Submission> submissionById = null;
-	public void populateSubmission(String json) {
+	public void populateSubmission(String json, int uid) {
 		db.beginTransaction();
 		try {
 			JSONObject jsonObj = new JSONObject(json);
@@ -159,6 +159,7 @@ public class DBManager {
 			for (int i=0; i<jsonSubmission.length(); i++) {
 				JSONArray data = jsonSubmission.getJSONArray(i);
 				createSubmission(data.getInt(0),
+						uid,
 						data.getInt(1),
 						data.getInt(2),
 						data.getInt(3),
@@ -173,7 +174,7 @@ public class DBManager {
 		} finally {
 			db.endTransaction();
 		}
-		queryAllSubmission();
+		queryAllSubmission(uid);
 		for (Submission s: submissionById.values()) {
 			Problem.tried(s.problemId);
 			if (s.isAccepted()) {
@@ -189,7 +190,7 @@ public class DBManager {
 			for (int i=0; i<all.length(); i++) {
 				JSONObject event = all.getJSONObject(i);
 				JSONObject submission = event.getJSONObject("msg");
-				Submission s = new Submission(submission.getInt("sid"), submission.getInt("pid"), submission.getInt("ver"), 
+				Submission s = new Submission(submission.getInt("sid"), submission.getInt("uid"), submission.getInt("pid"), submission.getInt("ver"), 
 						submission.getInt("run"), submission.getInt("sbt"), submission.getInt("lan"), submission.getInt("rank"));
 				if (submission.getInt("uid") == uid) {
 					createSubmission(s);
@@ -201,9 +202,9 @@ public class DBManager {
 		}
 		return ret;
 	}
-	private Submission createSubmission(int id, int problemId, int verdict, int runtime,
+	private Submission createSubmission(int id, int uid, int problemId, int verdict, int runtime,
 			long submitTime, int lang, int rank) {
-		return createSubmission(new Submission(id, problemId, verdict, runtime, submitTime, lang, rank));
+		return createSubmission(new Submission(id, uid, problemId, verdict, runtime, submitTime, lang, rank));
 	}
 	private Submission createSubmission(Submission submission) {
 		ContentValues values = new ContentValues();
@@ -220,8 +221,9 @@ public class DBManager {
 	public Map<Integer,Submission> getAllSubmission() {
 		return new TreeMap<Integer,Submission>(submissionById);
 	}
-	private Submission cursorToSubmission(Cursor cursor) {
-		Submission ret = new Submission(cursor.getInt(0), 
+	private Submission cursorToSubmission(Cursor cursor, int uid) {
+		Submission ret = new Submission(cursor.getInt(0),
+				uid,
 				cursor.getInt(1), 
 				cursor.getInt(2), 
 				cursor.getInt(3), 
@@ -231,23 +233,23 @@ public class DBManager {
 		return ret;
 	}
 	@SuppressLint("UseSparseArrays")
-	public boolean queryAllSubmission() {
+	public boolean queryAllSubmission(int uid) {
 		submissionById = new TreeMap<Integer,Submission>();
 		Cursor cursor = db.query(DBHelper.SUBMISSION_TABLE, DBHelper.SUBMISSION_COLUMNS, null, null, null, null,null);
 		boolean ret = cursor.moveToFirst();
 		if (ret) {
 			while (!cursor.isAfterLast()) {
-				Submission s = cursorToSubmission(cursor);
+				Submission s = cursorToSubmission(cursor, uid);
 				submissionById.put(s.id, s);
 				cursor.moveToNext();
 			}
 		}
 		return ret;
 	}
-	public Submission getLastSubmission() {
+	public Submission getLastSubmission(int uid) {
 		Cursor cursor = db.rawQuery("SELECT * FROM "+ DBHelper.SUBMISSION_TABLE +" ORDER BY "+ DBHelper.SUBMISSION_ID +" DESC LIMIT 1;",null );
 		if (cursor.moveToFirst()) {
-			return cursorToSubmission(cursor);
+			return cursorToSubmission(cursor, uid);
 		} else {
 			return null;
 		}

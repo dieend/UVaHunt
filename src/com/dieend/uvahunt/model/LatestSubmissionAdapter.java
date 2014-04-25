@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
@@ -30,10 +31,15 @@ public class LatestSubmissionAdapter extends BaseAdapter {
 	
 	Map<Integer, Submission> data;
 	Submission[] values;
-	public LatestSubmissionAdapter(Context context, Map<Integer, Submission> objects) {
+	boolean alldata;
+	int size;
+	int uid;
+	public LatestSubmissionAdapter(Context context, Map<Integer, Submission> objects, int uid) {
 		super();
 		data = objects;
-		values = new Submission[100];
+		size = data.size();
+		this.uid = uid;
+		values = new Submission[0];
 		inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		if (context instanceof ProblemViewer) {
 			viewer = (ProblemViewer) context;
@@ -47,13 +53,20 @@ public class LatestSubmissionAdapter extends BaseAdapter {
 			}
 		};
 	}
+	public void setOnlyMeSubmission(boolean b) {
+		if (alldata!=b) {
+			alldata = b;
+			notifyDataSetChanged();
+		}
+	}
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		position = data.size() - 1 - position;
+		position = size - 1 - position;
 		View rowView = convertView;
 		if (rowView == null) {
 			rowView = inflater.inflate(R.layout.listview_item_submission, null);
 			ViewHolder holder = new ViewHolder();
+			holder.user_background = (LinearLayout)rowView.findViewById(R.id.user_background);
 			holder.submitTime = (TextView)rowView.findViewById(R.id.submit_time);
 			holder.language = (TextView)rowView.findViewById(R.id.language);
 			holder.verdict =(TextView)rowView.findViewById(R.id.verdict);
@@ -68,7 +81,13 @@ public class LatestSubmissionAdapter extends BaseAdapter {
 		}
 		ViewHolder holder = (ViewHolder) rowView.getTag();
 		Submission submission = values[position];
+		if (submission.uid != uid) {
+			holder.user_background.setBackgroundColor(Color.GRAY);
+		} else {
+			holder.user_background.setBackgroundColor(Color.WHITE);
+		}
 		Problem problem = DBManager.$().getProblemsById(submission.getProblemId());
+		
 		holder.background.setBackgroundColor(Color.parseColor(Submission.verdictToColor(submission)));
 		holder.submitTime.setText(Submission.getReadableTime(submission));
 		holder.language.setText(Submission.getReadableLang(submission));
@@ -94,18 +113,30 @@ public class LatestSubmissionAdapter extends BaseAdapter {
 		public TextView bestExecutionTime;
 		public TextView rank;
 		public RelativeLayout background;
+		public LinearLayout user_background;
 	}
 
 	
 	@Override
 	public void notifyDataSetChanged() {
 		values = data.values().toArray(values);
-		
+		if (!alldata) {
+			int j = 0;
+			for (int i=0; i<values.length; i++) {
+				if (values[i].uid == uid) {
+					values[j] = values[i];
+					j++;
+				}
+			}
+			size = j;
+		} else {
+			size = data.size();
+		}
 		super.notifyDataSetChanged();
 	}
 	@Override
 	public int getCount() {
-		return data.size();
+		return size;
 	}
 	@Override
 	public Object getItem(int position) {

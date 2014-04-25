@@ -83,7 +83,7 @@ public class UhuntService extends AbstractService {
 	private class PrepareSubmissionTask implements Runnable {
 		String url;
 		private boolean updateAll = false;
-		public PrepareSubmissionTask(int uid) {
+		public PrepareSubmissionTask() {
 			this.url = String.format("http://uhunt.felix-halim.net/api/subs-user/%d/", uid);
 		}
 		@Override
@@ -95,7 +95,7 @@ public class UhuntService extends AbstractService {
 				updateAll = true;
 			}
 			int lastId = 0;
-			Submission lastSubmission = DBManager.$().getLastSubmission();
+			Submission lastSubmission = DBManager.$().getLastSubmission(uid);
 			if (lastSubmission == null) {
 				updateAll = true;
 			}
@@ -118,7 +118,7 @@ public class UhuntService extends AbstractService {
 		            instream.close();
 		        }
 	        	
-				DBManager.$().populateSubmission(result);
+				DBManager.$().populateSubmission(result, uid);
 				sp.edit().putLong(KEY_SUB_LAST_UPDATE, time).commit();
 		        send(Message.obtain(null, MSG_DETAIL_SUBMISSION_READY));
 		    } catch (Exception e1) {
@@ -152,8 +152,10 @@ public class UhuntService extends AbstractService {
 		            instream.close();
 		        }
 		        JSONArray arr = new JSONArray(result);
-		        send(Message.obtain(null, MSG_NEW_EVENT, DBManager.$().updateSubmissionFromLiveSubmission(arr, uid)));
-		        eventId = arr.getJSONObject(arr.length()-1).getLong("id");
+		        if (arr.length() > 0) {
+			        send(Message.obtain(null, MSG_NEW_EVENT, DBManager.$().updateSubmissionFromLiveSubmission(arr, uid)));
+			        eventId = arr.getJSONObject(arr.length()-1).getLong("id");
+		        }
 		        if (liveUpdate) {
 		        	new Thread(this).start();
 		        }
@@ -165,7 +167,7 @@ public class UhuntService extends AbstractService {
 	private class PrepareProfileTask implements Runnable {
 		String url;
 		
-		public PrepareProfileTask(int uid) {
+		public PrepareProfileTask() {
 			this.url = String.format("http://uhunt.felix-halim.net/api/ranklist/%d/0/0", uid);
 		}
 		@Override
@@ -217,8 +219,8 @@ public class UhuntService extends AbstractService {
 		switch (msg.what) {
 		case MSG_REQUEST_PROFILE:
 			uid = msg.arg1;
-			new Thread(new PrepareSubmissionTask(uid)).start();
-			new Thread(new PrepareProfileTask(uid)).start();
+			new Thread(new PrepareSubmissionTask()).start();
+			new Thread(new PrepareProfileTask()).start();
 			break;
 		case MSG_ENABLE_LIVE_UPDATER:
 			liveUpdate = true;

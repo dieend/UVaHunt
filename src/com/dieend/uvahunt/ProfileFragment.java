@@ -104,7 +104,7 @@ public class ProfileFragment extends BaseFragment{
 				}
 				((TextView)root.findViewById(R.id.failed_problems)).setMovementMethod(LinkMovementMethod.getInstance());
 				((TextView)root.findViewById(R.id.failed_problems)).setText(sb2, BufferType.SPANNABLE);
-				((TextView)root.findViewById(R.id.fail_solve_num)).setText(""+count);
+				((TextView)root.findViewById(R.id.fail_solve_num)).setText(String.valueOf(count));
 			}
 		});
 		

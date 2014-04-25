@@ -11,20 +11,22 @@ import android.text.format.DateUtils;
 public class Submission implements Serializable, Comparable<Submission>{
 	private static final long serialVersionUID = 1L;
 	int id;
+	int uid;
 	int problemId;
 	int verdict;
 	int runtime;
 	long submitTime;
 	int lang;
 	int rank;
-	public Submission(JSONArray arr) throws JSONException {
-		this(arr.getInt(0), arr.getInt(1), arr.getInt(2), arr.getInt(3), 
+	public Submission(JSONArray arr, int uid) throws JSONException {
+		this(arr.getInt(0), uid, arr.getInt(1), arr.getInt(2), arr.getInt(3), 
 				arr.getInt(4), arr.getInt(5), arr.getInt(6));
 	}
-	public Submission(int id, int problemId, int verdict, int runtime,
+	public Submission(int id, int uid, int problemId, int verdict, int runtime,
 			long submitTime, int lang, int rank) {
 		super();
 		this.id = id;
+		this.uid = uid;
 		this.problemId = problemId;
 		this.verdict = verdict;
 		this.runtime = runtime;
@@ -34,6 +36,9 @@ public class Submission implements Serializable, Comparable<Submission>{
 	}
 	public int getId() {
 		return id;
+	}
+	public int getUid() {
+		return uid;
 	}
 	public int getProblemId() {
 		return problemId;

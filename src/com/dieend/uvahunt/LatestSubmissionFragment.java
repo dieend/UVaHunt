@@ -30,6 +30,16 @@ public class LatestSubmissionFragment extends BaseFragment{
 
 		ToggleButton button = (ToggleButton) v.findViewById(R.id.live_submission_button);
 		button.setOnClickListener(toggleButtonListener);
+		((ToggleButton) v.findViewById(R.id.submission_user_dependency)).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (((ToggleButton) v).isChecked()) {
+					adapter.setOnlyMeSubmission(true);
+				} else {
+					adapter.setOnlyMeSubmission(false);
+				}
+			}
+		});
 		return v;
 	}
 	public void setToggleState(final boolean status) {
@@ -60,7 +70,7 @@ public class LatestSubmissionFragment extends BaseFragment{
 	public void onAttach(final Activity activity) {
 		super.onAttach(activity);
 		viewer = (ProblemViewer) activity;
-		adapter = new LatestSubmissionAdapter(activity, data);
+		adapter = new LatestSubmissionAdapter(activity, data, ((UvaHuntActivity)activity).uid);
 		toggleButtonListener = new OnClickListener() {
 			@Override
 			public void onClick(View v) {

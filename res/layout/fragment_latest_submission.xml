@@ -12,6 +12,13 @@
 	    
 	</ListView>
 	<ToggleButton
+	    android:id="@+id/submission_user_dependency"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content" 
+	    android:textOn="only me"
+	    android:textOff="everyone"
+	    android:layout_above="@+id/live_submission_button"/>
+	<ToggleButton
 	    android:id="@+id/live_submission_button"
 	    android:layout_width="match_parent"
 	    android:layout_height="wrap_content" 
