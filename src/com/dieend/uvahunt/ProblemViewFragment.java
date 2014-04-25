@@ -42,17 +42,6 @@ public class ProblemViewFragment extends BaseFragment{
 		});
 		return view;
 	}
-	
-	@Override
-	public boolean onBackPressed() {
-//		if (getView() != null) {
-//			if (getView().findViewById(R.id.webview).getVisibility() == View.VISIBLE) {
-//				resetVisibility(getView());
-//				return true;
-//			}
-//		}
-		return false;
-	}
 
 	public void loadProblem(int number) {
 		final int problemNumber = number;
