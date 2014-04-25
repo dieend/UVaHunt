@@ -81,7 +81,7 @@ public class LatestSubmissionAdapter extends BaseAdapter {
 		}
 		ViewHolder holder = (ViewHolder) rowView.getTag();
 		Submission submission = values[position];
-		if (submission.uid != uid) {
+		if (submission.uid != uid && submission.uid != -1) {
 			holder.user_background.setBackgroundColor(Color.GRAY);
 		} else {
 			holder.user_background.setBackgroundColor(Color.WHITE);
@@ -123,7 +123,7 @@ public class LatestSubmissionAdapter extends BaseAdapter {
 		if (!alldata) {
 			int j = 0;
 			for (int i=0; i<values.length; i++) {
-				if (values[i].uid == uid) {
+				if (values[i].uid == uid || values[i].uid == -1) {
 					values[j] = values[i];
 					j++;
 				}

@@ -53,4 +53,7 @@ public abstract class BaseFragment extends Fragment{
 			taskQueue.poll().run();
 		}
 	}
+	public boolean onBackPressed() {
+		return false;
+	}
 }

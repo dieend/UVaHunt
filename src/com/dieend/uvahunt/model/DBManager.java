@@ -175,12 +175,7 @@ public class DBManager {
 			db.endTransaction();
 		}
 		queryAllSubmission(uid);
-		for (Submission s: submissionById.values()) {
-			Problem.tried(s.problemId);
-			if (s.isAccepted()) {
-				Problem.solve(s.problemId);
-			}
-		}
+		
 	}
 
 	public Map<Integer, Submission> updateSubmissionFromLiveSubmission(JSONArray all, int uid) {
@@ -242,6 +237,12 @@ public class DBManager {
 				Submission s = cursorToSubmission(cursor, uid);
 				submissionById.put(s.id, s);
 				cursor.moveToNext();
+			}
+		}
+		for (Submission s: submissionById.values()) {
+			Problem.tried(s.problemId);
+			if (s.isAccepted()) {
+				Problem.solve(s.problemId);
 			}
 		}
 		return ret;

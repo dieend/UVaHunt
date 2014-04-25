@@ -103,9 +103,13 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
         uhuntService = new ServiceManager(this, UhuntService.class, new UhuntServiceHandler(this));
         uhuntService.start();
         findViewById(android.R.id.progress).setVisibility(View.GONE);
-        Log.d("AAAA", "here2");
     }
-    
+    @Override
+    public void onBackPressed() {
+        if (!getFragment(selectedItem).onBackPressed()) { // and then you define a method allowBackPressed with the logic to allow back pressed or not
+            super.onBackPressed();
+        }
+    }
     @Override
 	protected void onResume() {
 		super.onResume();
@@ -170,6 +174,7 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
             selectItem(position);
         }
     }
+    // need to sync with R.array.drawer_items
     enum FRAGMENT_TYPE{
     	PROFILE_FRAGMENT,
     	SUBMISSION_STATISTICS,
@@ -181,10 +186,9 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     	PROBLEM_STATISTICS
     }
     FRAGMENT_TYPE[] fragmentTypesArray = FRAGMENT_TYPE.values();
-    Fragment[] fragments = new Fragment[fragmentTypesArray.length];
+    BaseFragment[] fragments = new BaseFragment[fragmentTypesArray.length];
     FRAGMENT_TYPE selectedItem;
 	private void selectItem(int position) {
-    	Log.d("AAAA", "select1");
     	selectedItem = fragmentTypesArray[position];
         // update the main content by replacing fragments
     	Fragment fragment = getFragment(selectedItem);
@@ -224,7 +228,7 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     }
     
     
-    private synchronized Fragment getFragment(FRAGMENT_TYPE type) {
+    private synchronized BaseFragment getFragment(FRAGMENT_TYPE type) {
     	if (fragments[type.ordinal()] == null) {
 	    	switch (type) {
 		    	case PROFILE_FRAGMENT:

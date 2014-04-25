@@ -124,8 +124,8 @@ public class UhuntService extends AbstractService {
 		    } catch (Exception e1) {
 		    	e1.printStackTrace();
 		    	if (sp.getLong(KEY_SUB_LAST_UPDATE, 0L) != 0L) {
-		    		DBManager.$().queryAllProblem();
-		    		send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY));
+		    		DBManager.$().queryAllSubmission(-1);
+		    		send(Message.obtain(null, MSG_DETAIL_SUBMISSION_READY));
 		    	}
 		    }	
 		}

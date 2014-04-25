@@ -24,7 +24,6 @@
         <item>@string/competitive_programming</item>
         <item>@string/search_problems</item>
         <item>@string/rank_list</item>
-        <item>@string/live_submissions</item>
         <item>@string/problem_statistics</item>
     </string-array>
     <string name="profile">Profile</string>
@@ -34,7 +33,6 @@
     <string name="competitive_programming">Competitive Programming</string>
     <string name="search_problems">Search Problems</string>
     <string name="rank_list">Rank List</string>
-    <string name="live_submissions">Live Submissions</string>
     <string name="problem_statistics">Problem Statistics</string>
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
