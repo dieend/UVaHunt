@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/listview_container"
+        android:layout_width="match_parent" 
+        android:layout_height="fill_parent"
+        android:layout_above="@+id/button_container"
+        android:orientation="horizontal">
+	    <ListView
+	        android:id="@+id/list_chapter"
+	        android:layout_width="0dp"
+	        android:layout_weight="1"
+	        android:layout_height="wrap_content" >
+	    </ListView>
+	    <ListView
+	        android:id="@+id/list_subchapter"
+	        android:layout_width="0dp"
+	        android:layout_weight="1"
+	        android:layout_height="wrap_content" >
+	    </ListView>
+	    <ListView
+	        android:id="@+id/list_subsubchapter"
+	        android:layout_width="0dp"
+	        android:layout_weight="1"
+	        android:layout_height="wrap_content" >
+	    </ListView>
+	</LinearLayout>
+	<LinearLayout
+	    android:id="@+id/button_container"
+	    android:layout_alignParentBottom="true" 
+	    android:layout_width="match_parent" 
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+	    <Button
+	        android:id="@+id/button_cp1"
+	        android:layout_width="0dp"
+	        android:layout_weight="1"
+	        android:layout_height="wrap_content" 
+	        android:text="CP1"/>
+	    <Button
+	        android:id="@+id/button_cp2"
+	        android:layout_width="0dp"
+	        android:layout_weight="1"
+	        android:layout_height="wrap_content" 
+	        android:text="CP2"/>
+	    <Button
+	        android:id="@+id/button_cp3"
+	        android:layout_width="0dp"
+	        android:layout_weight="1"
+	        android:layout_height="wrap_content" 
+	        android:text="CP3"/>
+	</LinearLayout>
+</RelativeLayout>

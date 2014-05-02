@@ -223,6 +223,11 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
 				RateThisApp.showRateDialogIfNeeded(this);
 				break;
 			case RANK_LIST:
+				try {
+					uhuntService.send(Message.obtain(null, UhuntService.MSG_REQUEST_RANK));
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
 				break;
 			case SEARCH_PROBLEMS:
 				break;
@@ -248,11 +253,13 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
 		    		fragments[type.ordinal()] = new ProfileFragment();
 		    		break;
 				case COMPETITIVE_PROGRAMMING:
+					fragments[type.ordinal()] = CPFragment.newInstance(this);
 					break;
 				case LATEST_SUBMISSION:
 					fragments[type.ordinal()] = new LatestSubmissionFragment();
 					break;
 				case RANK_LIST:
+					fragments[type.ordinal()] = new RankFragment();
 					break;
 				case SEARCH_PROBLEMS:
 					fragments[type.ordinal()] = new ProblemViewFragment();
@@ -383,5 +390,8 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
 
 	@Override
 	public void rankReady(List<UserRank> ranks) {
+		if (selectedItem == FRAGMENT_TYPE.RANK_LIST) {
+			((RankFragment)getFragment(selectedItem)).updateRank(ranks);
+		}
 	}
 }

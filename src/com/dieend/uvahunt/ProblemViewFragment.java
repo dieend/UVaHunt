@@ -1,5 +1,6 @@
 package com.dieend.uvahunt;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -7,7 +8,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.dieend.uvahunt.model.DBManager;
@@ -26,8 +29,25 @@ public class ProblemViewFragment extends BaseFragment{
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 		final View view = inflater.inflate(R.layout.fragment_problem_view, container, false);
-		View webview = view.findViewById(R.id.webview); 
+		WebView webview = (WebView)view.findViewById(R.id.webview);
 		webview.setFocusableInTouchMode(true);
+		final ProgressBar progress = (ProgressBar)view.findViewById(R.id.progress_bar);
+		webview.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                progress.setVisibility(View.GONE);
+				view.setVisibility(View.VISIBLE);
+            }
+
+			@Override
+			public void onPageStarted(WebView view, String url,
+					Bitmap favicon) {
+				view.setVisibility(View.GONE);
+                progress.setVisibility(View.VISIBLE);
+				super.onPageStarted(view, url, favicon);
+			}
+        });
 		webview.setOnKeyListener(new View.OnKeyListener() {
 			@Override
 			public boolean onKey(View v, int keyCode, KeyEvent event) {
@@ -55,7 +75,7 @@ public class ProblemViewFragment extends BaseFragment{
 			@Override
 			public void run() {
 				WebView view = (WebView)(getView().findViewById(R.id.webview));
-				view.findViewById(R.id.webview).requestFocus();
+				view.requestFocus();
 				view.loadUrl(String.format("http://uva.onlinejudge.org/external/%d/%d.html", groupNumber, problemNumber));
 				getView().findViewById(R.id.webview_container).setVisibility(View.VISIBLE);
 				getView().findViewById(R.id.problem_number).setVisibility(View.GONE);

@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:id="@+id/background"
     android:orientation="vertical" >
 
     <TextView
@@ -15,6 +16,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        
         android:layout_below="@+id/text_identity">
 	     <TextView
 	        android:id="@+id/text_solve"
@@ -25,6 +27,7 @@
 	
 	    <TextView
 	        android:id="@+id/text_submit"
+	        android:layout_marginLeft="10dp"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:text="Submission: 0"
