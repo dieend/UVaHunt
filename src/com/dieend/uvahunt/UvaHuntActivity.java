@@ -1,9 +1,13 @@
 package com.dieend.uvahunt;
 
+import java.util.List;
 import java.util.Map;
 
-import android.app.SearchManager;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Message;
@@ -22,17 +26,18 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import com.dieend.uvahunt.callback.LiveUpdaterHandler;
 import com.dieend.uvahunt.callback.ProblemViewer;
 import com.dieend.uvahunt.model.DBManager;
 import com.dieend.uvahunt.model.Submission;
 import com.dieend.uvahunt.model.User;
+import com.dieend.uvahunt.model.UserRank;
 import com.dieend.uvahunt.service.UhuntService;
 import com.dieend.uvahunt.service.UhuntServiceDelegate;
 import com.dieend.uvahunt.service.UhuntServiceHandler;
 import com.dieend.uvahunt.service.base.ServiceManager;
+import com.kskkbys.rate.RateThisApp;
 
 
 public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer, UhuntServiceDelegate, LiveUpdaterHandler{
@@ -55,6 +60,7 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        RateThisApp.onStart(this);
         Intent intent = getIntent();
         Log.d(TAG, "username = " + intent.getStringExtra("username"));
         Log.d(TAG, "uid = " + intent.getStringExtra("uid"));
@@ -104,16 +110,10 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
         uhuntService.start();
         findViewById(android.R.id.progress).setVisibility(View.GONE);
     }
-    @Override
-    public void onBackPressed() {
-        if (!getFragment(selectedItem).onBackPressed()) { // and then you define a method allowBackPressed with the logic to allow back pressed or not
-            super.onBackPressed();
-        }
-    }
+
     @Override
 	protected void onResume() {
 		super.onResume();
-		Log.d("AAAA", "here1");
 	}
 
 	@Override
@@ -135,10 +135,9 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     /* Called whenever we call invalidateOptionsMenu() */
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-    	Log.d("AAAA", "here3");
         // If the nav drawer is open, hide action items related to the content view
         boolean drawerOpen = mDrawerLayout.isDrawerOpen(mDrawerList);
-        menu.findItem(R.id.action_websearch).setVisible(!drawerOpen);
+        menu.findItem(R.id.action_sign_out).setVisible(!drawerOpen);
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -151,17 +150,33 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
         }
         // Handle action buttons
         switch(item.getItemId()) {
-        case R.id.action_websearch:
+        case R.id.action_sign_out:
             // create intent to perform web search for this planet
-            Intent intent = new Intent(Intent.ACTION_WEB_SEARCH);
-            intent.putExtra(SearchManager.QUERY, getSupportActionBar().getTitle());
+            Intent intent = new Intent(this, StartActivity.class);
             // catch event that there's no activity to handle intent
-            if (intent.resolveActivity(getPackageManager()) != null) {
-                startActivity(intent);
-            } else {
-                Toast.makeText(this, R.string.app_not_available, Toast.LENGTH_LONG).show();
-            }
+            SharedPreferences preference = getSharedPreferences(UvaHuntActivity.PREFERENCES_FILE, MODE_PRIVATE);
+            preference.edit()
+            	.putString("username", null)
+            	.putString("uid",null)
+            	.commit();
+            try {
+				uhuntService.send(Message.obtain(null, UhuntService.MSG_RESET_SUBMISSION));
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+            startActivity(intent);
+            finish();
             return true;
+        case R.id.action_feedback:
+        	RateThisApp.showRateDialog(this);
+        	return true;
+        case R.id.action_about:
+        	intent = new Intent(this, AboutActivity.class);
+        	startActivity(intent);
+        	return true;
+        case R.id.action_setting:
+        	// TODO setting activity
+        	return true;
         default:
             return super.onOptionsItemSelected(item);
         }
@@ -182,8 +197,7 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     	LATEST_SUBMISSION,
     	COMPETITIVE_PROGRAMMING,
     	SEARCH_PROBLEMS,
-    	RANK_LIST,
-    	PROBLEM_STATISTICS
+    	RANK_LIST
     }
     FRAGMENT_TYPE[] fragmentTypesArray = FRAGMENT_TYPE.values();
     BaseFragment[] fragments = new BaseFragment[fragmentTypesArray.length];
@@ -205,18 +219,18 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
 				break;
 			case LATEST_SUBMISSION:
 				((LatestSubmissionFragment)fragment).setToggleState(isLiveUpdate);
-				Map<Integer,Submission> data = DBManager.$().getAllSubmission();
-				if (submissionReady) ((LatestSubmissionFragment)fragment).updateSubmission(data);
-				break;
-			case PROBLEM_STATISTICS:
+				if (submissionReady) ((LatestSubmissionFragment)fragment).updateSubmission(DBManager.$().getAllSubmission());
+				RateThisApp.showRateDialogIfNeeded(this);
 				break;
 			case RANK_LIST:
 				break;
 			case SEARCH_PROBLEMS:
 				break;
 			case SUBMISSION_STATISTICS:
+				if (submissionReady) ((SubmissionStatisticsFragment)fragment).updateSubmission(DBManager.$().getAllSubmission());
 				break;
 			case SOLVED_PROBLEM_LEVEL:
+				if (submissionReady) ((SolvedProblemLevelFragment)fragment).updateProblem();
 				break;
 		}
         // update selected item and title, then close the drawer
@@ -224,7 +238,6 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
         
         setTitle(mMenuTitles[position]);
         mDrawerLayout.closeDrawer(mDrawerList);
-        Log.d("AAAA", "select1");
     }
     
     
@@ -239,16 +252,16 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
 				case LATEST_SUBMISSION:
 					fragments[type.ordinal()] = new LatestSubmissionFragment();
 					break;
-				case PROBLEM_STATISTICS:
-					break;
 				case RANK_LIST:
 					break;
 				case SEARCH_PROBLEMS:
 					fragments[type.ordinal()] = new ProblemViewFragment();
 					break;
 				case SUBMISSION_STATISTICS:
+					fragments[type.ordinal()] = new SubmissionStatisticsFragment();
 					break;
 				case SOLVED_PROBLEM_LEVEL:
+					fragments[type.ordinal()] = new SolvedProblemLevelFragment();
 					break;
 	    	}
 		}
@@ -269,19 +282,23 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     public void profileReady(User json) {
     	profileReady = true;
     	user = json;
+    	// TODO shouldn't it better to just call selectItem again?
     	if (selectedItem == FRAGMENT_TYPE.PROFILE_FRAGMENT) {
 			ProfileFragment fragment = (ProfileFragment)getFragment(FRAGMENT_TYPE.PROFILE_FRAGMENT);
 			fragment.updateProfile(user);
-		
     	}
     }
     private boolean submissionReady = false;
     @Override
 	public void submissionReady() {
     	submissionReady = true;
+    	Fragment fragment = getFragment(selectedItem);
     	if (selectedItem == FRAGMENT_TYPE.PROFILE_FRAGMENT) {
-	    	ProfileFragment fragment = (ProfileFragment)getFragment(FRAGMENT_TYPE.PROFILE_FRAGMENT);
-			fragment.updateSubmission();
+    		((ProfileFragment)fragment).updateSubmission();
+    	} else if (selectedItem == FRAGMENT_TYPE.LATEST_SUBMISSION) {
+    		((LatestSubmissionFragment)fragment).updateSubmission(DBManager.$().getAllSubmission());
+    	} else if (selectedItem == FRAGMENT_TYPE.SUBMISSION_STATISTICS) {
+    		((SubmissionStatisticsFragment)fragment).updateSubmission(DBManager.$().getAllSubmission());
     	}
 	}
     @Override
@@ -308,16 +325,13 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-        Log.d("AAAA", "here6");
         // Sync the toggle state after onRestoreInstanceState has occurred.
         mDrawerToggle.syncState();
-        Log.d("AAAA", "here7");
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        Log.d("AAAA", "here7");
         // Pass any configuration change to the drawer toggle
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
@@ -347,5 +361,27 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
 		}
 	}
 
+	@Override
+	public void failed(String reason) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setMessage(reason)
+			   .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					finish();
+				}
+			}).setTitle("Ooops!");
+		Dialog d = builder.create();
+		d.setOnDismissListener(new DialogInterface.OnDismissListener() {
+			@Override
+			public void onDismiss(DialogInterface dialog) {
+				finish();
+			}
+		});
+		d.show();
+	}
 
+	@Override
+	public void rankReady(List<UserRank> ranks) {
+	}
 }

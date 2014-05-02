@@ -8,6 +8,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.widget.EditText;
+import android.widget.TextView;
+
+import com.dieend.uvahunt.model.DBManager;
+import com.dieend.uvahunt.model.Problem;
 
 public class ProblemViewFragment extends BaseFragment{
 	public static ProblemViewFragment newInstance(int problemId) {
@@ -46,15 +50,25 @@ public class ProblemViewFragment extends BaseFragment{
 	public void loadProblem(int number) {
 		final int problemNumber = number;
 		final int groupNumber = problemNumber / 100;
+		final Problem p = DBManager.$().getProblemsByNum(number);
 		executeWhenViewReady(new ViewTask() {
 			@Override
 			public void run() {
 				WebView view = (WebView)(getView().findViewById(R.id.webview));
-				view.setVisibility(View.VISIBLE);
-				view.requestFocus();
+				view.findViewById(R.id.webview).requestFocus();
+				view.loadUrl(String.format("http://uva.onlinejudge.org/external/%d/%d.html", groupNumber, problemNumber));
+				getView().findViewById(R.id.webview_container).setVisibility(View.VISIBLE);
 				getView().findViewById(R.id.problem_number).setVisibility(View.GONE);
 				getView().findViewById(R.id.search_button).setVisibility(View.GONE);
-				view.loadUrl(String.format("http://uva.onlinejudge.org/external/%d/%d.html", groupNumber, problemNumber));
+				((TextView)(getView().findViewById(R.id.text_ac))).setText("AC: " + p.getNumOfAccepted());
+				((TextView)(getView().findViewById(R.id.text_ce))).setText("CE: " + p.getNumOfCompileError());
+				((TextView)(getView().findViewById(R.id.text_ml))).setText("ML: " + p.getNumOfMemoryLimitError());
+				((TextView)(getView().findViewById(R.id.text_pe))).setText("PE: " + p.getNumOfPresentationError());
+				((TextView)(getView().findViewById(R.id.text_re))).setText("RE: " + p.getNumOfRuntimeError());
+				((TextView)(getView().findViewById(R.id.text_tl))).setText("TL: " + p.getNumOfTimeLimitError());
+				((TextView)(getView().findViewById(R.id.text_wa))).setText("WA: " + p.getNumOfWrongAnswer());
+				((TextView)(getView().findViewById(R.id.text_dacu))).setText("DACU: " + p.getDacu());
+				((TextView)(getView().findViewById(R.id.text_level))).setText("Level: " + p.getLevel());
 			}
 		});	
 	}
@@ -67,7 +81,7 @@ public class ProblemViewFragment extends BaseFragment{
 		}
 	}
 	private void resetVisibility(View parentView) {
-		parentView.findViewById(R.id.webview).setVisibility(View.GONE);
+		parentView.findViewById(R.id.webview_container).setVisibility(View.GONE);
 		parentView.findViewById(R.id.problem_number).setVisibility(View.VISIBLE);
 		parentView.findViewById(R.id.search_button).setVisibility(View.VISIBLE);
 	}

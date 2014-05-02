@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/text_identity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Name - (username)"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/text_identity">
+	     <TextView
+	        android:id="@+id/text_solve"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Solved: 0"
+	        android:textAppearance="?android:attr/textAppearanceSmall" />
+	
+	    <TextView
+	        android:id="@+id/text_submit"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Submission: 0"
+	        android:textAppearance="?android:attr/textAppearanceSmall" />
+        
+    </LinearLayout>
+    <TextView
+	        android:id="@+id/text_rank"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="-1"
+	        android:textAppearance="?android:attr/textAppearanceSmall" 
+	        android:layout_alignParentRight="true"
+	        android:layout_centerInParent="true"/>
+</RelativeLayout>

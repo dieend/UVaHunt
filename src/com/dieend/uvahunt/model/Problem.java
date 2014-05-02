@@ -12,6 +12,7 @@ public class Problem {
 	int bestRuntime;
 	int runtimeLimit;
 	int bestMemory;
+	int numOfCompileError;
 	int numOfRuntimeError;
 	int numOfOutputLimitError;
 	int numOfTimeLimitError;
@@ -19,21 +20,21 @@ public class Problem {
 	int numOfWrongAnswer;
 	int numOfPresentationError;
 	int numOfAccepted;
-
 	Problem(int id,
 		int number,
 		String title,
 		int dacu,
 		int bestRuntime,
+		int runtimeLimit,
 		int bestMemory,
+		int numOfCompileError,
 		int numOfRuntimeError,
 		int numOfOutputLimitError,
 		int numOfTimeLimitError,
 		int numOfMemoryLimitError,
 		int numOfWrongAnswer,
 		int numOfPresentationError,
-		int numOfAccepted,
-		int runtimeLimit) {
+		int numOfAccepted) {
 		this.id = id;
 		this.number = number;
 		this.title = title;
@@ -41,6 +42,7 @@ public class Problem {
 		this.bestRuntime = bestRuntime;
 		this.runtimeLimit = runtimeLimit;
 		this.bestMemory = bestMemory;
+		this.numOfCompileError = numOfCompileError;
 		this.numOfRuntimeError = numOfRuntimeError;
 		this.numOfOutputLimitError = numOfOutputLimitError;
 		this.numOfTimeLimitError = numOfTimeLimitError;
@@ -69,6 +71,9 @@ public class Problem {
 	}
 	public int getBestMemory() {
 		return bestMemory;
+	}
+	public int getNumOfCompileError() {
+		return numOfCompileError;
 	}
 	public int getNumOfRuntimeError() {
 		return numOfRuntimeError;
@@ -118,6 +123,10 @@ public class Problem {
 		if (!solveds.contains(id)) {
 			trieds.add(id);
 		}
+	}
+	public static void reset() {
+		solveds.clear();
+		trieds.clear();
 	}
 	
 }

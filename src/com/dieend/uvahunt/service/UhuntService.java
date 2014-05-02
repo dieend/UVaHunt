@@ -1,7 +1,9 @@
 package com.dieend.uvahunt.service;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -10,6 +12,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -19,6 +22,7 @@ import android.util.Log;
 import com.dieend.uvahunt.UvaHuntActivity;
 import com.dieend.uvahunt.model.DBManager;
 import com.dieend.uvahunt.model.Submission;
+import com.dieend.uvahunt.model.UserRank;
 import com.dieend.uvahunt.service.base.AbstractService;
 import com.dieend.uvahunt.tools.Utility;
 
@@ -40,15 +44,12 @@ public class UhuntService extends AbstractService {
 			SharedPreferences sp = getApplicationContext().getSharedPreferences(UvaHuntActivity.PREFERENCES_FILE, Context.MODE_PRIVATE);
 			long time = new Date().getTime();
 			
-			if (time - sp.getLong(KEY_PROB_LAST_UPDATE, 0L) > (sp.getLong(KEY_PROB_SYNC_FREQ, DEFAULT_PROB_SYNC_FREQ))) {
+			if (time - sp.getLong(KEY_PROB_LAST_UPDATE, 0L) > (sp.getLong(KEY_PROB_SYNC_FREQ, DEFAULT_PROB_SYNC_FREQ)) 
+					|| !DBManager.$().queryAllProblem()) {
 				Log.i(UvaHuntActivity.TAG, "updating problem database");
 			} else {
-				if (DBManager.$().queryAllProblem()) {
-					send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY), true);
-					return;
-				} else {
-					Log.i(UvaHuntActivity.TAG, "updating problem database");
-				}
+				send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY), true);
+				return;
 			}
 			HttpClient client = new DefaultHttpClient();
 			HttpConnectionParams.setConnectionTimeout(client.getParams(), 10000);
@@ -72,8 +73,11 @@ public class UhuntService extends AbstractService {
 		    } catch (Exception e1) {
 		    	e1.printStackTrace();
 		    	if (sp.getLong(KEY_PROB_LAST_UPDATE, 0L) != 0L) {
-		    		DBManager.$().queryAllProblem();
-		    		send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY), true);
+		    		if (DBManager.$().queryAllProblem()) {
+		    			send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY), true);
+		    		} else {
+		    			send(Message.obtain(null, MSG_FAILED, "Unstable Connection"));
+		    		}
 		    	}
 		    	// TODO: retry download problem
 		    }
@@ -117,8 +121,9 @@ public class UhuntService extends AbstractService {
 		            result = Utility.convertStreamToString(instream);
 		            instream.close();
 		        }
-	        	
+
 				DBManager.$().populateSubmission(result, uid);
+
 				sp.edit().putLong(KEY_SUB_LAST_UPDATE, time).commit();
 		        send(Message.obtain(null, MSG_DETAIL_SUBMISSION_READY));
 		    } catch (Exception e1) {
@@ -189,9 +194,57 @@ public class UhuntService extends AbstractService {
 		        }
 		        send(Message.obtain(null, MSG_PROFILE_READY, results));
 			} catch (Exception e1) {
-		    	e1.printStackTrace();
+				// TODO i18n
+				e1.printStackTrace();
 		    }
 		}
+	}
+	
+	private class ResetSubmissionTask implements Runnable {
+		@Override
+		public void run() {
+			liveUpdate = false;
+			uid = -1;
+			DBManager.$().resetSubmission();
+		}		
+	}
+	
+	private class RankListTask implements Runnable {
+		private String url = String.format("http://uhunt.felix-halim.net/api/ranklist/%d/10/10", uid);
+		@Override
+		public void run() {
+			try {
+				String results = "";
+				HttpClient client = new DefaultHttpClient();
+			    HttpGet request = new HttpGet(url);
+			    Log.i(UvaHuntActivity.TAG, "connecting: " + url);
+			    HttpResponse response;
+		        response = client.execute(request);         
+		        HttpEntity entity = response.getEntity();
+		        if (entity != null) {
+		            InputStream instream = entity.getContent();
+		            	results = Utility.convertStreamToString(instream);
+		            	Log.i(UvaHuntActivity.TAG, "result of " + url + ": " + results);
+		            
+		            instream.close();
+		        }
+		        JSONArray arr = new JSONArray(results);
+		        List<UserRank> ranks = new ArrayList<UserRank>();
+		        for (int i=0; i<arr.length(); i++) {
+		        	JSONObject obj = arr.getJSONObject(i);
+		        	ranks.add(new UserRank(obj.getInt("rank"), 
+		        					obj.getString("name"), 
+		        					obj.getString("username"), 
+		        					obj.getInt("ac"), 
+		        					obj.getInt("nos")));
+		        }
+		        send(Message.obtain(null, MSG_RANK_READY, ranks));
+			} catch (Exception e1) {
+				// TODO i18n
+				e1.printStackTrace();
+		    }
+		}
+		
 	}
 	
 	@Override
@@ -229,7 +282,14 @@ public class UhuntService extends AbstractService {
 		case MSG_DISABLE_LIVE_UPDATER:
 			liveUpdate = false;
 			break;
+		case MSG_RESET_SUBMISSION:
+			new Thread(new ResetSubmissionTask()).start();
+			break;
+		case MSG_REQUEST_RANK:
+			new Thread(new RankListTask()).start();
+			break;
 		}
+			
 	}
 	public static final int MSG_READY = 1;
 	public static final int MSG_DETAIL_PROBLEM_READY = 2;
@@ -239,6 +299,10 @@ public class UhuntService extends AbstractService {
 	public static final int MSG_NEW_EVENT = 6;
 	public static final int MSG_ENABLE_LIVE_UPDATER = 7;
 	public static final int MSG_DISABLE_LIVE_UPDATER = 8;
+	public static final int MSG_RESET_SUBMISSION = 9;
+	public static final int MSG_FAILED = 10;
+	public static final int MSG_REQUEST_RANK = 11;
+	public static final int MSG_RANK_READY = 12;
 	private int uid;
 	private boolean liveUpdate = false;
 }

@@ -7,7 +7,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -21,7 +20,7 @@ import com.dieend.uvahunt.UvaHuntActivity;
 
 public class DBManager {
 	private static class DBHelper  extends SQLiteOpenHelper {
-		private static final int DATABASE_VERSION = 3;
+		private static final int DATABASE_VERSION = 8;
 		public static final String DB_NAME = UvaHuntActivity.TAG + ".DATABASE";
 		
 		public static final String PROBLEM_TABLE = "problem";
@@ -31,6 +30,7 @@ public class DBManager {
 		public static final String PROBLEM_COLUMN_DACU = "dacu"; //3
 		public static final String PROBLEM_COLUMN_BEST_RUNTIME = "best_runtime"; //4
 		public static final String PROBLEM_COLUMN_BEST_MEMORY = "best_memory"; //5
+		public static final String PROBLEM_COLUMN_COMPILE_ERROR = "nce"; //5
 		public static final String PROBLEM_COLUMN_RUNTIME_ERROR = "nre";//12
 		public static final String PROBLEM_COLUMN_OUTPUT_LIMIT = "nole";//13
 		public static final String PROBLEM_COLUMN_TIME_LIMIT = "ntle";//14
@@ -39,7 +39,6 @@ public class DBManager {
 		public static final String PROBLEM_COLUMN_PRESENTATION_ERROR = "npe";//17
 		public static final String PROBLEM_COLUMN_ACCEPTED = "nac"; //18
 		public static final String PROBLEM_COLUMN_RUNTIME_LIMIT = "runtime_limit"; // 19
-		public static final String PROBLEM_COLUMN_IS_SOLVED = "solved"; //
 		public static final String[] PROBLEM_COLUMNS = {PROBLEM_COLUMN_ID,
 			PROBLEM_COLUMN_NUMBER,
 			PROBLEM_COLUMN_TITLE,
@@ -47,14 +46,14 @@ public class DBManager {
 			PROBLEM_COLUMN_BEST_RUNTIME,
 			PROBLEM_COLUMN_RUNTIME_LIMIT,
 			PROBLEM_COLUMN_BEST_MEMORY,
+			PROBLEM_COLUMN_COMPILE_ERROR,
 			PROBLEM_COLUMN_RUNTIME_ERROR,
 			PROBLEM_COLUMN_OUTPUT_LIMIT,
 			PROBLEM_COLUMN_TIME_LIMIT,
 			PROBLEM_COLUMN_MEMORY_LIMIT,
 			PROBLEM_COLUMN_WRONG_ANSWER,
 			PROBLEM_COLUMN_PRESENTATION_ERROR,
-			PROBLEM_COLUMN_ACCEPTED,
-			PROBLEM_COLUMN_IS_SOLVED};
+			PROBLEM_COLUMN_ACCEPTED};
 		public static final String SUBMISSION_TABLE = "submission";
 		public static final String SUBMISSION_ID = "id";
 		public static final String SUBMISSION_PROBLEM_ID ="problem_id";
@@ -91,14 +90,14 @@ public class DBManager {
 				PROBLEM_COLUMN_BEST_RUNTIME + " INTEGER, " +
 				PROBLEM_COLUMN_RUNTIME_LIMIT + " INTEGER, " +
 				PROBLEM_COLUMN_BEST_MEMORY + " INTEGER, " +
+				PROBLEM_COLUMN_COMPILE_ERROR + " INTEGER, " +
 				PROBLEM_COLUMN_RUNTIME_ERROR + " INTEGER, " +
 				PROBLEM_COLUMN_OUTPUT_LIMIT + " INTEGER, " +
 				PROBLEM_COLUMN_TIME_LIMIT + " INTEGER, " +
 				PROBLEM_COLUMN_MEMORY_LIMIT + " INTEGER, " +
 				PROBLEM_COLUMN_WRONG_ANSWER + " INTEGER, " +
 				PROBLEM_COLUMN_PRESENTATION_ERROR + " INTEGER, " +
-				PROBLEM_COLUMN_ACCEPTED + " INTEGER, " +
-				PROBLEM_COLUMN_IS_SOLVED + " INTEGER);";
+				PROBLEM_COLUMN_ACCEPTED + " INTEGER);";
 		
 		public DBHelper(Context context) {
 			super(context, DB_NAME, null, DATABASE_VERSION);
@@ -112,6 +111,7 @@ public class DBManager {
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 			db.execSQL("DROP TABLE IF EXISTS " + PROBLEM_TABLE);
+			db.execSQL("DROP TABLE IF EXISTS " + SUBMISSION_TABLE);
 		    onCreate(db);
 		}
 	}
@@ -150,7 +150,19 @@ public class DBManager {
 			ready = false;
 		}
 	}
-	private Map<Integer, Submission> submissionById = null;
+	private Map<Integer, Submission> submissionById = new TreeMap<Integer,Submission>();;
+	public void resetSubmission() {
+		db.beginTransaction();
+		try {
+			db.delete(DBHelper.SUBMISSION_TABLE, null, null);
+			db.setTransactionSuccessful();
+			Problem.reset();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.endTransaction();
+		}
+	}
 	public void populateSubmission(String json, int uid) {
 		db.beginTransaction();
 		try {
@@ -180,7 +192,6 @@ public class DBManager {
 
 	public Map<Integer, Submission> updateSubmissionFromLiveSubmission(JSONArray all, int uid) {
 		Map<Integer, Submission> ret = new TreeMap<Integer, Submission>();
-//		if (showAll)
 		try {
 			for (int i=0; i<all.length(); i++) {
 				JSONObject event = all.getJSONObject(i);
@@ -211,6 +222,11 @@ public class DBManager {
 		values.put(DBHelper.SUBMISSION_LANG,submission.lang);
 		values.put(DBHelper.SUBMISSION_RANK,submission.rank);
 		db.insertWithOnConflict(DBHelper.SUBMISSION_TABLE, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+		submissionById.put(submission.id, submission);
+		Problem.tried(submission.problemId);
+		if (submission.isAccepted()) {
+			Problem.solve(submission.problemId);
+		}
 		return submission;
 	}
 	public Map<Integer,Submission> getAllSubmission() {
@@ -227,7 +243,7 @@ public class DBManager {
 				cursor.getInt(6));
 		return ret;
 	}
-	@SuppressLint("UseSparseArrays")
+
 	public boolean queryAllSubmission(int uid) {
 		submissionById = new TreeMap<Integer,Submission>();
 		Cursor cursor = db.query(DBHelper.SUBMISSION_TABLE, DBHelper.SUBMISSION_COLUMNS, null, null, null, null,null);
@@ -236,13 +252,11 @@ public class DBManager {
 			while (!cursor.isAfterLast()) {
 				Submission s = cursorToSubmission(cursor, uid);
 				submissionById.put(s.id, s);
+				Problem.tried(s.problemId);
+				if (s.isAccepted()) {
+					Problem.solve(s.problemId);
+				}
 				cursor.moveToNext();
-			}
-		}
-		for (Submission s: submissionById.values()) {
-			Problem.tried(s.problemId);
-			if (s.isAccepted()) {
-				Problem.solve(s.problemId);
 			}
 		}
 		return ret;
@@ -263,19 +277,21 @@ public class DBManager {
 			JSONArray jsonProblems = new JSONArray(json);
 			for (int i=0; i<jsonProblems.length(); i++) {
 				JSONArray data = jsonProblems.getJSONArray(i);
-				createProblem(data.getInt(0), data.getInt(1), 
-						data.getString(2), 
-						data.getInt(3), 
-						data.getInt(4), 
-						data.getInt(5), 
-						data.getInt(12), 
-						data.getInt(13), 
-						data.getInt(14), 
-						data.getInt(15), 
-						data.getInt(16), 
-						data.getInt(17), 
-						data.getInt(18), 
-						data.getInt(19));
+				createProblem(data.getInt(0), // id
+						data.getInt(1), // number
+						data.getString(2), // title
+						data.getInt(3), // dacu
+						data.getInt(4), // best RT
+						data.getInt(5), // best Mem
+						data.getInt(10), // nCE
+						data.getInt(12), // nRE
+						data.getInt(13), // nOL
+						data.getInt(14), // nTL
+						data.getInt(15), // nML
+						data.getInt(16), // nWA
+						data.getInt(17), // nPE
+						data.getInt(18), // nAC
+						data.getInt(19)); // TL
 			}
 			db.setTransactionSuccessful();
 		} catch (JSONException e) {
@@ -286,7 +302,7 @@ public class DBManager {
 		queryAllProblem();
 	}
 	private Problem createProblem(int id, int number, String title, int dacu, int bestRuntime, 
-								int bestMemory, int nRE, int nOLE, int nTLE, int nMLE, 
+								int bestMemory, int nCE,int nRE, int nOLE, int nTLE, int nMLE, 
 								int nWA, int nPE, int nAC, int timeLimit){
 		ContentValues values = new ContentValues();
 	    values.put(DBHelper.PROBLEM_COLUMN_ID, id);
@@ -295,6 +311,7 @@ public class DBManager {
 	    values.put(DBHelper.PROBLEM_COLUMN_DACU, dacu);
 	    values.put(DBHelper.PROBLEM_COLUMN_BEST_RUNTIME, bestRuntime);
 	    values.put(DBHelper.PROBLEM_COLUMN_BEST_MEMORY, bestMemory);
+	    values.put(DBHelper.PROBLEM_COLUMN_COMPILE_ERROR, nCE);
 	    values.put(DBHelper.PROBLEM_COLUMN_RUNTIME_ERROR, nRE);
 	    values.put(DBHelper.PROBLEM_COLUMN_OUTPUT_LIMIT, nOLE);
 	    values.put(DBHelper.PROBLEM_COLUMN_TIME_LIMIT, nTLE);
@@ -311,6 +328,7 @@ public class DBManager {
 	    	    dacu,
 	    	    bestRuntime,
 	    	    bestMemory,
+	    	    nCE,
 	    	    nRE,
 	    	    nOLE,
 	    	    nTLE,
@@ -361,7 +379,8 @@ public class DBManager {
 				cursor.getInt(10), 
 				cursor.getInt(11), 
 				cursor.getInt(12), 
-				cursor.getInt(13));
+				cursor.getInt(13),
+				cursor.getInt(14));
 		return ret;
 	}
 }

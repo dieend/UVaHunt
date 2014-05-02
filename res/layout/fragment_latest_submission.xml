@@ -6,9 +6,9 @@
 	<ListView
 	    android:id="@+id/submission_container"
 	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content"
+	    android:layout_height="fill_parent"
 	    android:orientation="vertical" 
-	    android:layout_above="@+id/live_submission_button">
+	    android:layout_above="@+id/submission_user_dependency">
 	    
 	</ListView>
 	<ToggleButton

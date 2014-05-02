@@ -12,7 +12,9 @@
 	        android:hint="Enter problem number"
 	        android:ems="10"
 	        android:inputType="number" >
+
 	        <requestFocus />
+
 	    </EditText>
 
 	    <Button
@@ -21,9 +23,94 @@
 	        android:layout_height="wrap_content"
 	        android:layout_gravity="center_horizontal"
 	        android:text="Search"/>
-     <WebView
-         android:id="@+id/webview"
+
+     <LinearLayout
+         android:id="@+id/webview_container"
          android:layout_width="match_parent"
-         android:layout_height="match_parent" 
-         android:visibility="gone"/>
+         android:layout_height="match_parent"
+         android:orientation="vertical"
+         android:visibility="gone" 
+         >
+	        
+	     <LinearLayout
+	         android:layout_width="match_parent"
+	         android:dividerPadding="10dp"
+	         android:showDividers="middle"
+	         android:layout_height="wrap_content" android:background="#000000">
+	         <TextView
+	             android:id="@+id/text_level"
+	             android:layout_width="0dp"
+	             android:layout_weight="1"
+	             android:layout_height="wrap_content"
+	             android:textColor="#FFFFFF"
+	             android:textAlignment="center"
+	             android:text="Level: " />
+	         <TextView
+	             android:id="@+id/text_ac"
+	             android:layout_width="0dp"
+	             android:layout_weight="1"
+	             android:layout_height="wrap_content"
+	             android:textColor="#01DF01"
+	             android:text="AC: " />
+	         <TextView
+	             android:id="@+id/text_dacu"
+	             android:layout_width="0dp"
+	             android:layout_weight="1"
+	             android:layout_height="wrap_content"
+	             android:textColor="#01DF01"
+	             android:text="DACU: " />
+	         <TextView
+	             android:id="@+id/text_pe"
+	             android:layout_width="0dp"
+	             android:textAlignment="center"
+	             android:layout_weight="1"
+	             android:layout_height="wrap_content"
+	             android:textColor="#9FF781"
+	             android:text="PE: " />
+	         <TextView
+	             android:id="@+id/text_wa"
+	             android:layout_width="0dp"
+	             android:textAlignment="center"
+	             android:layout_weight="1"
+	             android:layout_height="wrap_content"
+	             android:textColor="#FE2E2E"
+	             android:text="WA: " />
+	         <TextView
+	             android:id="@+id/text_tl"
+	             android:layout_width="0dp"
+	             android:textAlignment="center"
+	             android:layout_weight="1"
+	             android:layout_height="wrap_content"
+	             android:textColor="#0000FF"
+	             android:text="TL: " />
+             <TextView
+	             android:id="@+id/text_ml"
+	             android:layout_width="0dp"
+	             android:textAlignment="center"
+	             android:layout_weight="1"
+	             android:layout_height="wrap_content"
+	             android:textColor="#C8FE2E"
+	             android:text="ML: " />
+             <TextView
+	             android:id="@+id/text_ce"
+	             android:layout_width="0dp"
+	             android:textAlignment="center"
+	             android:layout_weight="1"
+	             android:layout_height="wrap_content"
+	             android:textColor="#A9E2F3"
+	             android:text="CE: " />
+             <TextView
+	             android:id="@+id/text_re"
+	             android:layout_width="0dp"
+	             android:textAlignment="center"
+	             android:layout_weight="1"
+	             android:layout_height="wrap_content"
+	             android:textColor="#A9E2F3"
+	             android:text="RE: " />
+	     </LinearLayout>
+	     <WebView
+	         android:id="@+id/webview"
+	         android:layout_width="match_parent"
+	         android:layout_height="fill_parent" />
+     </LinearLayout>
 </LinearLayout>

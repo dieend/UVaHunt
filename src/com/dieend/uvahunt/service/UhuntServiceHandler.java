@@ -1,5 +1,6 @@
 package com.dieend.uvahunt.service;
 
+import java.util.List;
 import java.util.Map;
 
 import org.json.JSONException;
@@ -9,6 +10,7 @@ import android.os.Message;
 
 import com.dieend.uvahunt.model.Submission;
 import com.dieend.uvahunt.model.User;
+import com.dieend.uvahunt.model.UserRank;
 
 public class UhuntServiceHandler extends Handler {
 		UhuntServiceDelegate delegate;
@@ -44,6 +46,13 @@ public class UhuntServiceHandler extends Handler {
 				case UhuntService.MSG_NEW_EVENT:
 					Map<Integer, Submission> data = (Map<Integer, Submission>) msg.obj;
 					delegate.submissionArrival(data);
+					break;
+				case UhuntService.MSG_FAILED:
+					delegate.failed(msg.obj.toString());
+					break;
+				case UhuntService.MSG_RANK_READY:
+					List<UserRank> ranks = (List<UserRank>) msg.obj;
+					delegate.rankReady(ranks);
 					break;
 				}
 			super.handleMessage(msg);

@@ -11,31 +11,6 @@ public abstract class BaseFragment extends Fragment{
 	protected static interface ViewTask {
 		public void run();
 	}
-//	protected class WaitViewTask extends AsyncTask<ViewTask, Void, Void> {
-//		ViewTask[] r;
-//		@Override
-//		protected Void doInBackground(ViewTask... params) {
-//			r = params;
-//			while (getView() == null) {
-//				try {
-//					Thread.sleep(500);
-//				} catch (InterruptedException ex) {
-//					ex.printStackTrace();
-//				}
-//			}
-//			return null;
-//		}
-//
-//		@Override
-//		protected void onPostExecute(Void result) {
-//			super.onPostExecute(result);
-//			for (ViewTask run : r) {
-//				run.run();
-//			}
-//		}
-//		
-//		
-//	}
 	protected void executeWhenViewReady(ViewTask v) {
 		View view = getView();
 		if (view == null) {
@@ -52,8 +27,5 @@ public abstract class BaseFragment extends Fragment{
 		while (!taskQueue.isEmpty()) {
 			taskQueue.poll().run();
 		}
-	}
-	public boolean onBackPressed() {
-		return false;
 	}
 }

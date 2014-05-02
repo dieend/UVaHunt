@@ -15,8 +15,18 @@
   -->
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/action_websearch"
-          android:icon="@drawable/action_search"
-          android:title="@string/action_websearch"
-          android:showAsAction="ifRoom|withText" />
+    <item android:id="@+id/action_sign_out"
+          android:icon="@drawable/ic_sign_out"
+          android:title="@string/sign_out"
+          android:showAsAction="always" />
+    <item android:id="@+id/action_about"
+          android:title="@string/about"
+          android:showAsAction="withText|collapseActionView" />
+    <item android:id="@+id/action_feedback"
+          android:title="@string/rate"
+          android:showAsAction="withText|collapseActionView" />
+    <item android:id="@+id/action_setting"
+          android:title="@string/setting"
+          android:showAsAction="withText|collapseActionView" />
+    
 </menu>

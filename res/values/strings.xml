@@ -24,8 +24,8 @@
         <item>@string/competitive_programming</item>
         <item>@string/search_problems</item>
         <item>@string/rank_list</item>
-        <item>@string/problem_statistics</item>
     </string-array>
+    <string name="version">Version</string>
     <string name="profile">Profile</string>
     <string name="submission_statistics">Submission Statistics</string>
     <string name="solved_problem_level">Solved Problem Level</string>
@@ -36,8 +36,17 @@
     <string name="problem_statistics">Problem Statistics</string>
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
-    <string name="action_websearch">Web search</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="about">About</string>
+    <string name="rate">Rate</string>
+    <string name="setting">Setting</string>
     <string name="app_not_available">Sorry, there\'s no web browser available</string>
     <string name="login">Login</string>
     <string name="uva_username">UVa Username</string>
+    <string name="about_content1">
+        This is a third party  android application for the popular site uHunt which is a complementary tool for UVa online-judge that keeps statistics, provide selections of problems to solve, and exposes a web API for other web developers to build upon it. This application is powered by uHunt web API and developed by dieend.
+    </string>
+    <string name="about_content2">
+        You can contribute to this application via Github at &lt;a href="http://github.com/dieend/UvaHunt">dieend/UvaHunt&lt;/a>
+    </string>
 </resources>

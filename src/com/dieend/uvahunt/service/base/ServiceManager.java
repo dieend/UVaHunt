@@ -12,6 +12,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+import android.util.SparseArray;
 
 public class ServiceManager {
 	private Class<? extends AbstractService> mServiceClass;
@@ -19,16 +20,24 @@ public class ServiceManager {
     private boolean mIsBound;
     private Messenger mService = null;
     private Handler mIncomingHandler = null;
-    private final Messenger mMessenger = new Messenger(new IncomingHandler(this));
+    private IncomingHandler defaultIncomingHandler = new IncomingHandler(this);
+    private final Messenger mMessenger = new Messenger(defaultIncomingHandler);
     
     private static class IncomingHandler extends Handler {
     	ServiceManager manager;
+    	SparseArray<Handler> customHandler = new SparseArray<Handler>();
     	public IncomingHandler(ServiceManager manager) {
 			this.manager = manager;
 		}
         @Override
         public void handleMessage(Message msg) {
-        	if (manager.mIncomingHandler != null) {
+        	Handler h = customHandler.get(msg.what, null);
+        	if (h!= null) {
+        		Log.i("ServiceHandler", "Incoming message. Passing to custom handler: "+ AbstractService.MsgString(msg));
+        		h.handleMessage(msg);
+        		customHandler.remove(msg.what);
+        		h = null;
+        	} else if (manager.mIncomingHandler != null) {
         		Log.i("ServiceHandler", "Incoming message. Passing to handler: "+ AbstractService.MsgString(msg));
         		manager.mIncomingHandler.handleMessage(msg);
         	}
@@ -103,7 +112,15 @@ public class ServiceManager {
             }
     	}
     }
-    
+
+    public void send(Message msg, Handler h) throws RemoteException {
+    	if (mIsBound) {
+            if (mService != null) {
+            	defaultIncomingHandler.customHandler.append(msg.what, h);
+            	mService.send(msg);
+            }
+    	}
+    }
     private void doStartService() {
     	mActivity.startService(new Intent(mActivity, mServiceClass));    	
     }

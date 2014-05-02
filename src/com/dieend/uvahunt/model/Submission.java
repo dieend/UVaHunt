@@ -93,23 +93,25 @@ public class Submission implements Serializable, Comparable<Submission>{
 	}
 	public static String verdictToColor(Submission s) {
 		int verdict = s.getVerdict();
+		return verdictToColor(verdict);
+	}
+	public static String verdictToColor(int verdict) {
 		switch (verdict) {
-			case 10 : return "#088A85";
-			case 15 : return "#088A85";
-			case 0	: // 0 also in queue
-			case 20 : return "#585858";
-			case 30 : return "#A9E2F3";
-			case 35 : return "#000000";
-			case 40 : return "#A9E2F3";
-			case 45 : return "#F4FA58";
-			case 50 : return "#0000FF";
-			case 60 : return "#C8FE2E";
-			case 70 : return "#FE2E2E";
-			case 80 : return "#9FF781";
-			case 90 : return "#01DF01";
-			default: return "#000000";
-		}
-		
+		case 10 : return "#088A85";
+		case 15 : return "#088A85";
+		case 0	: // 0 also in queue
+		case 20 : return "#585858";
+		case 30 : return "#A9E2F3";
+		case 35 : return "#000000";
+		case 40 : return "#A9E2F3";
+		case 45 : return "#F4FA58";
+		case 50 : return "#0000FF";
+		case 60 : return "#C8FE2E";
+		case 70 : return "#FE2E2E";
+		case 80 : return "#9FF781";
+		case 90 : return "#01DF01";
+		default: return "#000000";
+	}
 	}
 	public static String getReadableLang(Submission s) {
 		int langId = s.lang;
