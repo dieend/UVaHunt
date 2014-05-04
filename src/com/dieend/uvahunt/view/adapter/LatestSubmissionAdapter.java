@@ -4,6 +4,7 @@ import java.util.Map;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
@@ -76,6 +77,7 @@ public class LatestSubmissionAdapter extends BaseAdapter {
 			holder.problem = (TextView)rowView.findViewById(R.id.problem);
 			holder.problem.setMovementMethod(LinkMovementMethod.getInstance());
 			holder.discuss = (TextView)rowView.findViewById(R.id.discuss);
+			holder.discuss.setMovementMethod(LinkMovementMethod.getInstance());
 			holder.executionTime = (TextView)rowView.findViewById(R.id.execution_time);
 			holder.bestExecutionTime = (TextView)rowView.findViewById(R.id.best_execution_time);
 			holder.rank = (TextView)rowView.findViewById(R.id.rank);
@@ -95,8 +97,9 @@ public class LatestSubmissionAdapter extends BaseAdapter {
 		holder.submitTime.setText(Submission.getReadableTime(submission));
 		holder.language.setText(Submission.getReadableLang(submission));
 		holder.verdict.setText(Submission.getReadableVerdict(submission));
+		holder.discuss.setText(Html.fromHtml(String.format("<a href=\"http://acm.uva.es/board/search.php?keywords=%d\">discuss</a>", problem.getNumber())));
 		SpannableString st = new SpannableString(problem.getTitle());
-		st.setSpan(onClickViewProblem(problem.getId(), problem.getTitle()), 0, problem.getTitle().length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+		st.setSpan(onClickViewProblem(problem.getNumber(), problem.getTitle()), 0, problem.getTitle().length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 		holder.problem.setText(st, BufferType.SPANNABLE);
 		holder.executionTime.setText(String.format("%.3f", submission.getRuntime() / 1000.0));
 		holder.bestExecutionTime.setText(String.format("%.3f", problem.getBestRuntime() / 1000.0));

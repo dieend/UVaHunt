@@ -5,6 +5,7 @@ import java.util.Map;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -12,6 +13,7 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.RemoteException;
+import android.os.Vibrator;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -320,6 +322,12 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     @Override
     public void submissionArrival(Map<Integer, Submission> submissions) {
     	if (selectedItem == FRAGMENT_TYPE.LATEST_SUBMISSION) {
+    		for (Submission s: submissions.values()) {
+	    		if (s.getUid() == uid) {
+					 Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+					 v.vibrate(250);
+				}
+    		}
     		LatestSubmissionFragment fragment = (LatestSubmissionFragment) getFragment(FRAGMENT_TYPE.LATEST_SUBMISSION);
         	fragment.updateSubmission(submissions);
     	}
