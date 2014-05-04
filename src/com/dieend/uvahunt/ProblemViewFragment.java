@@ -27,11 +27,11 @@ public class ProblemViewFragment extends BaseFragment{
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 		final View view = inflater.inflate(R.layout.fragment_problem_view, container, false);
-		WebView webview = (WebView)view.findViewById(R.id.webview);
+		final WebView webview = (WebView)view.findViewById(R.id.webview);
 		webview.setFocusableInTouchMode(true); 
 		webview.getSettings().setAppCachePath(getActivity().getCacheDir().getAbsolutePath()); 
 		webview.getSettings().setAppCacheEnabled(true); 
-		webview.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
+		webview.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
 		final ProgressBar progress = (ProgressBar)view.findViewById(R.id.progress_bar);
 		webview.setWebViewClient(new WebViewClient() {
 			@Override
@@ -62,6 +62,14 @@ public class ProblemViewFragment extends BaseFragment{
 			@Override
 			public void onClick(View v) {
 				searchProblem(v);
+			}
+		});
+		view.findViewById(R.id.refresh_button).setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				webview.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+				webview.reload();
+				webview.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
 			}
 		});
 		return view;

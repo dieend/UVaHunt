@@ -21,16 +21,23 @@
 	        android:layout_gravity="center_horizontal"
 	        android:text="Search"/>
 
-     <LinearLayout
+     <RelativeLayout
          android:id="@+id/webview_container"
          android:layout_width="match_parent"
          android:layout_height="match_parent"
          android:orientation="vertical"
          android:visibility="gone" 
          >
-	        
-	     <LinearLayout
+	     <WebView
+	         android:id="@+id/webview"
 	         android:layout_width="match_parent"
+	         android:layout_height="fill_parent"
+	         android:layout_above="@+id/problem_statistics"
+	         android:visibility="gone" />  
+	     <LinearLayout
+	         android:id="@+id/problem_statistics"
+	         android:layout_width="match_parent"
+	         android:layout_alignParentBottom="true"
 	         android:dividerPadding="10dp"
 	         android:showDividers="middle"
 	         android:layout_height="wrap_content" android:background="#000000">
@@ -104,18 +111,20 @@
 	             android:layout_height="wrap_content"
 	             android:textColor="#A9E2F3"
 	             android:text="RE: " />
+
+             <ImageButton
+                 android:id="@+id/refresh_button"
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:background="@drawable/ic_menu_refresh" />
+
 	     </LinearLayout>
-	     <WebView
-	         android:id="@+id/webview"
-	         android:layout_width="match_parent"
-	         android:layout_height="fill_parent"
-	         android:visibility="gone" />
 	     <ProgressBar
 	         android:id="@+id/progress_bar"
 	         style="?android:attr/progressBarStyleLarge"
 	         android:layout_width="wrap_content"
-	         android:layout_gravity="center"
+	         android:layout_centerInParent="true"
 	         android:layout_height="fill_parent" />
-     </LinearLayout>
+     </RelativeLayout>
 
 </LinearLayout>
