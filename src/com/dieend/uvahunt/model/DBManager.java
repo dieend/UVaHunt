@@ -1,5 +1,7 @@
 package com.dieend.uvahunt.model;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -356,6 +358,17 @@ public class DBManager {
 			}
 		}
 		return ret;
+	}
+	public List<Problem> getProblemsSortedByDacu(int limit) {
+		List<Problem> probs = new ArrayList<Problem>();
+		Cursor cursor = db.query(DBHelper.PROBLEM_TABLE, DBHelper.PROBLEM_COLUMNS, null, null, null, null, DBHelper.PROBLEM_COLUMN_DACU, "" + limit);
+		if (cursor.moveToFirst()) {
+			while (!cursor.isAfterLast()) {
+				probs.add(cursorToProblem(cursor));
+				cursor.moveToNext();
+			}
+		}
+		return probs;
 	}
 	public Problem getProblemsById(int id) {
 		if (problemsById == null) throw new RuntimeException("problems not initiated");

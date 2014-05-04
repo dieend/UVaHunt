@@ -28,4 +28,9 @@ public abstract class BaseFragment extends Fragment{
 			taskQueue.poll().run();
 		}
 	}
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+	}
+	
 }

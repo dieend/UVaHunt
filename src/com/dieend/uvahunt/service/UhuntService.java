@@ -33,6 +33,7 @@ public class UhuntService extends AbstractService {
 	public static final Long DEFAULT_PROB_SYNC_FREQ = 1000L * 60L * 60L * 12L;
 	public static final String KEY_SUB_SYNC_FREQ = "submission_sync_frequency";
 	public static final Long DEFAULT_SUB_SYNC_FREQ = 1000L * 60L * 60L * 12L;
+	boolean problemReady = false;
 
 	private class PrepareProblemDetailTask implements Runnable {		
 		String url;
@@ -48,7 +49,7 @@ public class UhuntService extends AbstractService {
 					|| !DBManager.$().queryAllProblem()) {
 				Log.i(UvaHuntActivity.TAG, "updating problem database");
 			} else {
-				send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY), true);
+				send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY));
 				return;
 			}
 			HttpClient client = new DefaultHttpClient();
@@ -69,12 +70,13 @@ public class UhuntService extends AbstractService {
 	        	
 				DBManager.$().populateProblem(result);
 				sp.edit().putLong(KEY_PROB_LAST_UPDATE, time).commit();
-		        send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY), true);
+				problemReady = true;
+		        send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY));
 		    } catch (Exception e1) {
 		    	e1.printStackTrace();
 		    	if (sp.getLong(KEY_PROB_LAST_UPDATE, 0L) != 0L) {
 		    		if (DBManager.$().queryAllProblem()) {
-		    			send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY), true);
+		    			send(Message.obtain(null, MSG_DETAIL_PROBLEM_READY));
 		    		} else {
 		    			send(Message.obtain(null, MSG_FAILED, "Unstable Connection"));
 		    		}
@@ -105,10 +107,11 @@ public class UhuntService extends AbstractService {
 			}
 			if (!updateAll) {
 				lastId = lastSubmission.getId();
+				Log.i(UvaHuntActivity.TAG, "updating submission database after "+lastId);
 			}
 			url += lastId;
 			HttpClient client = new DefaultHttpClient();
-//			HttpConnectionParams.setConnectionTimeout(client.getParams(), 10000);
+			HttpConnectionParams.setConnectionTimeout(client.getParams(), 10000);
 			Log.i(UvaHuntActivity.TAG, "connecting: " + url);
 		    HttpGet request = new HttpGet(url);
 		    HttpResponse response;
@@ -250,11 +253,11 @@ public class UhuntService extends AbstractService {
 	@Override
 	public void onStartService() {
 		DBManager.prepare(getApplicationContext());
-		new Thread(new PrepareProblemDetailTask()).start();
 	}
 
 	@Override
 	public void onRegisteredService() {
+		new Thread(new PrepareProblemDetailTask()).start();
 		send(Message.obtain(null, MSG_READY, liveUpdate));
 	}
 

@@ -53,7 +53,7 @@ public class StartActivity extends Activity{
 		if (username == null) {
 			throw new RuntimeException("somehow no username");
 		}
-		if (id == null) {
+		if (id == null || Integer.parseInt(id)==0) {
 			login(username);
 			return;
 		}

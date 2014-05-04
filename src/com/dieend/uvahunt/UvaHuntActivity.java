@@ -56,7 +56,31 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
     int uid;
     private User user;
     private boolean isLiveUpdate = false;
-
+    // need to sync with R.array.drawer_items
+    enum FRAGMENT_TYPE{
+    	PROFILE_FRAGMENT,
+    	SUBMISSION_STATISTICS,
+    	SOLVED_PROBLEM_LEVEL,
+    	LATEST_SUBMISSION,
+    	COMPETITIVE_PROGRAMMING,
+    	SEARCH_PROBLEMS,
+    	RANK_LIST
+    }
+    FRAGMENT_TYPE[] fragmentTypesArray = FRAGMENT_TYPE.values();
+    BaseFragment[] fragments = new BaseFragment[fragmentTypesArray.length];
+    FRAGMENT_TYPE selectedItem ;
+    private void restoreState(Bundle savedInstanceState) {
+    	if (savedInstanceState != null) {
+    		selectedItem = fragmentTypesArray[savedInstanceState.getInt("selected")];
+    	} else {
+    		selectedItem = fragmentTypesArray[0];
+    	}
+    }
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+    	outState.putInt("selected", selectedItem.ordinal());
+    	super.onSaveInstanceState(outState);
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -104,17 +128,14 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
             }
         };
         mDrawerLayout.setDrawerListener(mDrawerToggle);
-        selectItem(0);
+        restoreState(savedInstanceState);
+        selectItem(selectedItem.ordinal());
         uid = Integer.parseInt(intent.getStringExtra("uid"));
         uhuntService = new ServiceManager(this, UhuntService.class, new UhuntServiceHandler(this));
         uhuntService.start();
         findViewById(android.R.id.progress).setVisibility(View.GONE);
     }
-
-    @Override
-	protected void onResume() {
-		super.onResume();
-	}
+    
 
 	@Override
     public void onDestroy() {
@@ -189,19 +210,7 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
             selectItem(position);
         }
     }
-    // need to sync with R.array.drawer_items
-    enum FRAGMENT_TYPE{
-    	PROFILE_FRAGMENT,
-    	SUBMISSION_STATISTICS,
-    	SOLVED_PROBLEM_LEVEL,
-    	LATEST_SUBMISSION,
-    	COMPETITIVE_PROGRAMMING,
-    	SEARCH_PROBLEMS,
-    	RANK_LIST
-    }
-    FRAGMENT_TYPE[] fragmentTypesArray = FRAGMENT_TYPE.values();
-    BaseFragment[] fragments = new BaseFragment[fragmentTypesArray.length];
-    FRAGMENT_TYPE selectedItem;
+    
 	private void selectItem(int position) {
     	selectedItem = fragmentTypesArray[position];
         // update the main content by replacing fragments
@@ -321,9 +330,6 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
         getSupportActionBar().setTitle(mTitle);
     }
 
-	public ServiceManager getServiceManager() {
-		return uhuntService;
-	}
     /**
      * When using the ActionBarDrawerToggle, you must call it during
      * onPostCreate() and onConfigurationChanged()...
@@ -341,12 +347,13 @@ public class UvaHuntActivity extends ActionBarActivity implements ProblemViewer,
         super.onConfigurationChanged(newConfig);
         // Pass any configuration change to the drawer toggle
         mDrawerToggle.onConfigurationChanged(newConfig);
+        
     }
 	@Override
 	public void serviceReady(boolean liveUpdateActive) {
 		try {
 			isLiveUpdate = liveUpdateActive;
-			getServiceManager().send(Message.obtain(null, UhuntService.MSG_REQUEST_PROFILE, uid, 0));
+			uhuntService.send(Message.obtain(null, UhuntService.MSG_REQUEST_PROFILE, uid, 0));
 		} catch (RemoteException ex) {
 			ex.printStackTrace();
 		}
