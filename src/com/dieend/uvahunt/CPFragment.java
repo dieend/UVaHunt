@@ -11,6 +11,7 @@ import com.dieend.uvahunt.tools.Utility;
 
 import android.R.color;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -118,6 +119,25 @@ public class CPFragment extends BaseFragment {
 		listSubSubChapter = (ListView) v.findViewById(R.id.list_subsubchapter);
 		listSubSubChapter.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 		listSubSubChapter.setAdapter(subSubChapterAdapter);
+		listSubSubChapter.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int selectedSubSubChapter,
+					long id) {
+				try {
+					Intent intent = new Intent(getActivity(), CPActivity.class);
+					intent.putExtra("edition", selectedEdition);
+					intent.putExtra("chapter", selectedChapter);
+					intent.putExtra("sub_chapter", selectedSubChapter);
+					intent.putExtra("sub_sub_chapter", selectedSubSubChapter);
+					JSONArray arr = cp[selectedEdition].getJSONObject(selectedChapter).getJSONArray("arr").getJSONObject(selectedSubChapter).getJSONArray("arr").getJSONArray(selectedSubSubChapter);
+					intent.putExtra("detail", arr.toString());
+					startActivity(intent);
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+				
+			}
+		});
 		buttons[0] = (Button) v.findViewById(R.id.button_cp1);
 		buttons[0].setOnClickListener(new View.OnClickListener() {
 			@Override

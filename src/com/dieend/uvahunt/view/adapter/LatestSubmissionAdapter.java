@@ -1,4 +1,4 @@
-package com.dieend.uvahunt.model;
+package com.dieend.uvahunt.view.adapter;
 
 import java.util.Map;
 
@@ -19,6 +19,9 @@ import android.widget.TextView.BufferType;
 
 import com.dieend.uvahunt.R;
 import com.dieend.uvahunt.callback.ProblemViewer;
+import com.dieend.uvahunt.model.DBManager;
+import com.dieend.uvahunt.model.Problem;
+import com.dieend.uvahunt.model.Submission;
 
 public class LatestSubmissionAdapter extends BaseAdapter {
 
@@ -81,7 +84,7 @@ public class LatestSubmissionAdapter extends BaseAdapter {
 		}
 		ViewHolder holder = (ViewHolder) rowView.getTag();
 		Submission submission = values[position];
-		if (submission.uid != uid && submission.uid != -1) {
+		if (submission.getUid() != uid && submission.getUid() != -1) {
 			holder.user_background.setBackgroundColor(Color.GRAY);
 		} else {
 			holder.user_background.setBackgroundColor(Color.WHITE);
@@ -93,11 +96,11 @@ public class LatestSubmissionAdapter extends BaseAdapter {
 		holder.language.setText(Submission.getReadableLang(submission));
 		holder.verdict.setText(Submission.getReadableVerdict(submission));
 		SpannableString st = new SpannableString(problem.getTitle());
-		st.setSpan(onClickViewProblem(problem.id, problem.title), 0, problem.title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+		st.setSpan(onClickViewProblem(problem.getId(), problem.getTitle()), 0, problem.getTitle().length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 		holder.problem.setText(st, BufferType.SPANNABLE);
-		holder.executionTime.setText(String.format("%.3f", submission.runtime / 1000.0));
+		holder.executionTime.setText(String.format("%.3f", submission.getRuntime() / 1000.0));
 		holder.bestExecutionTime.setText(String.format("%.3f", problem.getBestRuntime() / 1000.0));
-		holder.rank.setText("" + submission.rank);
+		holder.rank.setText("" + submission.getRank());
 		return rowView;
 	}
 
@@ -123,7 +126,7 @@ public class LatestSubmissionAdapter extends BaseAdapter {
 		if (!alldata) {
 			int j = 0;
 			for (int i=0; i<values.length; i++) {
-				if (values[i].uid == uid || values[i].uid == -1) {
+				if (values[i].getUid() == uid || values[i].getUid() == -1) {
 					values[j] = values[i];
 					j++;
 				}

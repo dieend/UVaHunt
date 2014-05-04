@@ -14,8 +14,8 @@ import android.widget.ToggleButton;
 
 import com.dieend.uvahunt.callback.LiveUpdaterHandler;
 import com.dieend.uvahunt.callback.ProblemViewer;
-import com.dieend.uvahunt.model.LatestSubmissionAdapter;
 import com.dieend.uvahunt.model.Submission;
+import com.dieend.uvahunt.view.adapter.LatestSubmissionAdapter;
 
 public class LatestSubmissionFragment extends BaseFragment{
 

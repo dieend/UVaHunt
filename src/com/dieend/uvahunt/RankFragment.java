@@ -3,8 +3,8 @@ package com.dieend.uvahunt;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dieend.uvahunt.model.RankListAdapter;
 import com.dieend.uvahunt.model.UserRank;
+import com.dieend.uvahunt.view.adapter.RankListAdapter;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;

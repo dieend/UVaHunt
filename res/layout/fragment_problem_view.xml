@@ -12,9 +12,6 @@
 	        android:hint="Enter problem number"
 	        android:ems="10"
 	        android:inputType="number" >
-
-	        <requestFocus />
-
 	    </EditText>
 
 	    <Button

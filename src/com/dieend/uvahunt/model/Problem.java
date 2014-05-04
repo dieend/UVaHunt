@@ -99,6 +99,9 @@ public class Problem {
 	public boolean isSolved() {
 		return isSolved(id);
 	}
+	public boolean isTried() {
+		return trieds.contains(id);
+	}
 	public int getLevel() {
 		return 10 - ((int)Math.floor(Math.min(10, Math.log(dacu > 0? dacu : 1))));
 	}

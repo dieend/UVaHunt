@@ -7,6 +7,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.EditText;
@@ -17,29 +18,22 @@ import com.dieend.uvahunt.model.DBManager;
 import com.dieend.uvahunt.model.Problem;
 
 public class ProblemViewFragment extends BaseFragment{
-	public static ProblemViewFragment newInstance(int problemId) {
-		ProblemViewFragment ret = new ProblemViewFragment();
-		Bundle args = new Bundle();
-		args.putInt("problemNumber", problemId);
-		ret.setArguments(args);
-		return ret;
-	}
 
+	boolean isSearchable = true;
+	public void setSearchable(boolean b) {
+		isSearchable = b;
+	}
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 		final View view = inflater.inflate(R.layout.fragment_problem_view, container, false);
 		WebView webview = (WebView)view.findViewById(R.id.webview);
-		webview.setFocusableInTouchMode(true);
+		webview.setFocusableInTouchMode(true); 
+		webview.getSettings().setAppCachePath(getActivity().getCacheDir().getAbsolutePath()); 
+		webview.getSettings().setAppCacheEnabled(true); 
+		webview.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
 		final ProgressBar progress = (ProgressBar)view.findViewById(R.id.progress_bar);
 		webview.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-                progress.setVisibility(View.GONE);
-				view.setVisibility(View.VISIBLE);
-            }
-
 			@Override
 			public void onPageStarted(WebView view, String url,
 					Bitmap favicon) {
@@ -47,11 +41,17 @@ public class ProblemViewFragment extends BaseFragment{
                 progress.setVisibility(View.VISIBLE);
 				super.onPageStarted(view, url, favicon);
 			}
+			@Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                progress.setVisibility(View.GONE);
+				view.setVisibility(View.VISIBLE);
+            }
         });
 		webview.setOnKeyListener(new View.OnKeyListener() {
 			@Override
 			public boolean onKey(View v, int keyCode, KeyEvent event) {
-				if (keyCode == KeyEvent.KEYCODE_BACK) {
+				if (keyCode == KeyEvent.KEYCODE_BACK && isSearchable) {
 					resetVisibility(view);
 					return true;
 				}

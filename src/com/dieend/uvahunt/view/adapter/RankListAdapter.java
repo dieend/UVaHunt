@@ -1,8 +1,9 @@
-package com.dieend.uvahunt.model;
+package com.dieend.uvahunt.view.adapter;
 
 import java.util.List;
 
 import com.dieend.uvahunt.R;
+import com.dieend.uvahunt.model.UserRank;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -51,10 +52,10 @@ public class RankListAdapter extends BaseAdapter{
 		}
 		ViewHolder tag = (ViewHolder)rowView.getTag();
 		UserRank rowData = ranks.get(position);
-		tag.textIdentity.setText(String.format("%s - (%s)", rowData.name, rowData.username)); 
-		tag.textSolve.setText(String.format("Solved: %d", rowData.ac));
-		tag.textSubmit.setText(String.format("Submissions: %d", rowData.nos));
-		tag.textRank.setText(String.format("%d", rowData.rank));
+		tag.textIdentity.setText(String.format("%s - (%s)", rowData.getName(), rowData.getUsername())); 
+		tag.textSolve.setText(String.format("Solved: %d", rowData.getAc()));
+		tag.textSubmit.setText(String.format("Submissions: %d", rowData.getNos()));
+		tag.textRank.setText(String.format("%d", rowData.getRank()));
 		if (position == 10) { // TODO change hardcoded value
 			tag.background.setBackgroundColor(Color.GREEN);
 		} else {
